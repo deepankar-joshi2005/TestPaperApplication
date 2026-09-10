@@ -1,0 +1,276 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Nav, Route } from '../navigation/types';
+import { getProfile, ProfileData } from '../services/profile.service';
+import { ERROR, MUTED, NAVY } from '../theme/colors';
+
+type Props = {
+  token: string;
+  nav: Nav;
+  onLogout: () => void;
+};
+
+const getInitials = (name: string): string =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+
+const MENU_ITEMS: { icon: keyof typeof Ionicons.glyphMap; label: string; route: Route }[] = [
+  { icon: 'person-outline', label: 'Edit Profile', route: { name: 'editProfile' } },
+  { icon: 'notifications-outline', label: 'Notifications', route: { name: 'notifications' } },
+  { icon: 'language-outline', label: 'Language Preferences', route: { name: 'language' } },
+  { icon: 'help-circle-outline', label: 'Help & Support', route: { name: 'help' } },
+];
+
+export default function ProfileScreen({ token, nav, onLogout }: Props) {
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getProfile(token);
+        setProfile(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load profile.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [token]);
+
+  return (
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <View style={styles.headerRow}>
+        <Text style={styles.headerTitle}>My Profile</Text>
+        <Pressable
+          style={styles.iconBtn}
+          hitSlop={8}
+          onPress={() => nav.push({ name: 'notifications' })}
+        >
+          <Ionicons name="notifications-outline" size={20} color={NAVY} />
+        </Pressable>
+      </View>
+
+      {loading && (
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={NAVY} size="large" />
+        </View>
+      )}
+
+      {!!error && !profile && (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      {profile && (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.profileRow}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{getInitials(profile.name)}</Text>
+            </View>
+            <View style={styles.profileInfo}>
+              <Text style={styles.name}>{profile.name}</Text>
+              <Text style={styles.contactText}>{profile.mobile}</Text>
+              <Text style={styles.contactText}>{profile.email}</Text>
+            </View>
+          </View>
+
+          <View style={styles.statsGrid}>
+            <StatCard label="Tests Attempted" value={String(profile.testsAttempted)} />
+            <StatCard label="Avg Accuracy" value={`${profile.avgAccuracy}%`} valueColor={NAVY} />
+            <StatCard
+              label="Best Rank"
+              value={profile.bestRank ? `#${profile.bestRank}` : '—'}
+              valueColor="#2E9E5B"
+            />
+          </View>
+
+          <View style={styles.menuList}>
+            {MENU_ITEMS.map((item) => (
+              <Pressable
+                key={item.label}
+                style={styles.menuRow}
+                onPress={() => nav.push(item.route)}
+              >
+                <Ionicons name={item.icon} size={19} color={NAVY} />
+                <Text style={styles.menuLabel}>{item.label}</Text>
+                <Ionicons name="chevron-forward" size={18} color={MUTED} />
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable style={styles.logoutBtn} onPress={onLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable>
+        </ScrollView>
+      )}
+    </SafeAreaView>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#F5F4EF',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingBox: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorBox: {
+    margin: 20,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#FBEAE8',
+  },
+  errorText: {
+    color: ERROR,
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingBottom: 30,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#EDEBE4',
+  },
+  avatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: NAVY,
+    backgroundColor: '#EEF1F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  contactText: {
+    fontSize: 12.5,
+    color: MUTED,
+    marginTop: 3,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#EDEBE4',
+  },
+  statLabel: {
+    fontSize: 10.5,
+    color: MUTED,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: NAVY,
+    marginTop: 4,
+  },
+  menuList: {
+    marginTop: 22,
+    gap: 10,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    borderWidth: 1,
+    borderColor: '#EDEBE4',
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E2937',
+  },
+  logoutBtn: {
+    marginTop: 22,
+    borderWidth: 1.4,
+    borderColor: ERROR,
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: 'center',
+    backgroundColor: '#FDF0EF',
+  },
+  logoutText: {
+    color: ERROR,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+});
