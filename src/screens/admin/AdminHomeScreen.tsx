@@ -87,6 +87,12 @@ export default function AdminHomeScreen({ user, token, nav }: Props) {
       icon: 'cloud-upload-outline',
       onPress: () => nav.push({ name: 'seriesList' }),
     },
+    {
+      key: 'manageNotes',
+      label: 'Manage Notes',
+      icon: 'document-text-outline',
+      onPress: () => nav.push({ name: 'notesCategoryList' }),
+    },
   ];
 
   const initials = user.name

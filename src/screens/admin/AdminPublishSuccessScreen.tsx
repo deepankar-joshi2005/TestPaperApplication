@@ -55,7 +55,10 @@ export default function AdminPublishSuccessScreen({ token, testId, nav }: Props)
               <SummaryRow label="Category" value={context?.category ?? '—'} />
               <SummaryRow label="Series" value={context?.series ?? '—'} />
               <SummaryRow label="Test Name" value={test.title} />
-              <SummaryRow label="Questions" value={`${test.totalQuestions} Questions`} />
+              <SummaryRow label="Format" value={test.format === 'pdf' ? 'PDF Test' : 'MCQ Test'} />
+              {test.format === 'mcq' && (
+                <SummaryRow label="Questions" value={`${test.totalQuestions} Questions`} />
+              )}
               <SummaryRow label="Duration" value={`${test.durationMinutes} Minutes`} />
             </View>
 

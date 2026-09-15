@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminHeader from '../../components/admin/AdminHeader';
 import PrimaryButton from '../../components/PrimaryButton';
 import { AdminNav } from '../../navigation/adminTypes';
@@ -55,21 +56,28 @@ export default function AdminPublishTestScreen({ token, testId, nav }: Props) {
     }
   };
 
-  const checklistItems = checklist
+  const checklistItems = !checklist
+    ? []
+    : checklist.format === 'pdf'
     ? [
+        { label: 'Test Name Added', ok: checklist.checklist.nameAdded },
+        { label: `Duration Set (${checklist.summary.durationMinutes} mins)`, ok: checklist.checklist.durationSet },
+        { label: 'Question PDF Uploaded', ok: checklist.checklist.questionPdfUploaded },
+        { label: 'Answer Key Uploaded', ok: checklist.checklist.answerKeyUploaded },
+      ]
+    : [
         { label: 'Test Name Added', ok: checklist.checklist.nameAdded },
         { label: `${checklist.questionCount} Questions Added`, ok: checklist.checklist.questionsAdded },
         { label: `Duration Set (${checklist.summary.durationMinutes} mins)`, ok: checklist.checklist.durationSet },
         { label: `Marks Configured (${checklist.summary.totalMarks} total)`, ok: checklist.checklist.marksConfigured },
         { label: 'Negative Marking Enabled', ok: checklist.checklist.negativeMarkingConfigured },
         { label: 'All Questions Validated', ok: checklist.checklist.allValidated },
-      ]
-    : [];
+      ];
 
-  const canPublish = checklist?.checklist.questionsAdded ?? false;
+  const canPublish = checklist?.checklist.allValidated ?? false;
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <AdminHeader title="Publish Test" subtitle="Verify checklist to go live" onBack={() => nav.pop()} />
 
       {loading && (
@@ -132,7 +140,7 @@ export default function AdminPublishTestScreen({ token, testId, nav }: Props) {
           </Pressable>
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

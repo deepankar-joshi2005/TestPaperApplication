@@ -14,6 +14,7 @@ export interface TestSeriesSummary {
 export interface TestListItem {
   id: string;
   title: string;
+  format: 'mcq' | 'pdf';
   totalQuestions: number;
   durationMinutes: number;
   totalMarks: number;
@@ -22,6 +23,9 @@ export interface TestListItem {
   attemptId: string | null;
   score: number | null;
   scorePercent: number | null;
+  maxAttempts: number;
+  attemptsUsed: number;
+  canReattempt: boolean;
 }
 
 export interface TestListResponse {
@@ -36,6 +40,7 @@ export interface TestInstructions {
   title: string;
   seriesTitle: string;
   category: string;
+  format: 'mcq' | 'pdf';
   totalQuestions: number;
   totalMarks: number;
   durationMinutes: number;

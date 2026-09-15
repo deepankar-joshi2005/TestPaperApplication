@@ -29,6 +29,15 @@
         {
           "photosPermission": "Allow the app to access your photos to upload category, series, and question images."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FDFBF6",
+          "image": "./assets/logo.png",
+          "imageWidth": 180,
+          "resizeMode": "contain"
+        }
       ]
     ]
   }

@@ -15,6 +15,7 @@ export interface ContinueTest {
   totalQuestions: number;
   questionsCompleted: number;
   percent: number;
+  format: 'mcq' | 'pdf';
 }
 
 export interface TestSeries {

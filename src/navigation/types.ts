@@ -1,13 +1,18 @@
-export type TabKey = 'home' | 'tests' | 'results' | 'profile';
+export type TabKey = 'home' | 'tests' | 'notes' | 'results' | 'profile';
 
 export type Route =
   | { name: 'tab'; tab: TabKey }
   | { name: 'testList'; category: string }
   | { name: 'testInstructions'; testId: string }
   | { name: 'testTaking'; attemptId: string; testId: string }
+  | { name: 'pdfTestTaking'; attemptId: string; testId: string }
   | { name: 'testResult'; attemptId: string }
   | { name: 'solutionReview'; attemptId: string }
+  | { name: 'pdfAnswerKey'; attemptId: string }
   | { name: 'leaderboard'; testId: string }
+  | { name: 'notesSubjectList'; category: string }
+  | { name: 'noteList'; subjectId: string; subjectName: string }
+  | { name: 'notePdfView'; title: string; pdfUrl: string }
   | { name: 'editProfile' }
   | { name: 'notifications' }
   | { name: 'language' }
@@ -26,6 +31,9 @@ export const routeTab = (route: Route): TabKey | null => {
       return route.tab;
     case 'testList':
       return 'tests';
+    case 'notesSubjectList':
+    case 'noteList':
+      return 'notes';
     case 'testResult':
     case 'leaderboard':
       return 'results';

@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NotificationBell from '../components/NotificationBell';
 import { resolveAssetUrl } from '../config/api';
 import { Nav } from '../navigation/types';
 import { getDashboard, DashboardData } from '../services/dashboard.service';
@@ -85,9 +86,12 @@ export default function HomeScreen({ user, token, nav }: Props) {
             <Text style={styles.welcomeText}>Welcome back,</Text>
             <Text style={styles.helloText}>Hello, {firstName} 👋</Text>
           </View>
-          <Pressable style={styles.avatar} onPress={() => nav.resetToTab('profile')}>
-            <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <NotificationBell token={token} onPress={() => nav.push({ name: 'notifications' })} />
+            <Pressable style={styles.avatar} onPress={() => nav.resetToTab('profile')}>
+              <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.searchBar}>
@@ -170,7 +174,7 @@ export default function HomeScreen({ user, token, nav }: Props) {
                   style={styles.continueCard}
                   onPress={() =>
                     nav.push({
-                      name: 'testTaking',
+                      name: data.continueTest!.format === 'pdf' ? 'pdfTestTaking' : 'testTaking',
                       attemptId: data.continueTest!.attemptId,
                       testId: data.continueTest!.testId,
                     })
@@ -267,6 +271,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   welcomeText: {
     fontSize: 13,

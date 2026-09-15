@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminHeader from '../../components/admin/AdminHeader';
 import StepProgressHeader from '../../components/admin/StepProgressHeader';
 import ToggleRow from '../../components/admin/ToggleRow';
 import FormInput from '../../components/FormInput';
 import PrimaryButton from '../../components/PrimaryButton';
 import { AdminNav } from '../../navigation/adminTypes';
-import { getTestDetail, updateTestConfig } from '../../services/admin/tests.service';
+import { getTestDetail, TestFormat, updateTestConfig } from '../../services/admin/tests.service';
 import { MUTED, NAVY } from '../../theme/colors';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 type AttemptsMode = '1' | 'unlimited' | 'custom';
 
 export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props) {
+  const [format, setFormat] = useState<TestFormat>('mcq');
   const [totalQuestions, setTotalQuestions] = useState('');
   const [totalMarks, setTotalMarks] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('60');
@@ -35,6 +37,7 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
     (async () => {
       try {
         const test = await getTestDetail(token, testId);
+        setFormat(test.format);
         setTotalQuestions(String(test.totalQuestions || ''));
         setTotalMarks(String(test.totalMarks || ''));
         setDurationMinutes(String(test.durationMinutes || 60));
@@ -64,17 +67,23 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
     setSaving(true);
     try {
       await updateTestConfig(token, testId, {
-        totalQuestions: totalQuestions ? Number(totalQuestions) : 0,
-        totalMarks: totalMarks ? Number(totalMarks) : 0,
         durationMinutes: durationMinutes ? Number(durationMinutes) : 60,
-        passingMarks: passingMarks ? Number(passingMarks) : 0,
-        negativeMarkingEnabled,
-        negativeMarks: negativeMarks ? Number(negativeMarks) : 0,
         maxAttempts,
         startDate: startDate || null,
         endDate: endDate || null,
+        ...(format === 'mcq'
+          ? {
+              totalQuestions: totalQuestions ? Number(totalQuestions) : 0,
+              totalMarks: totalMarks ? Number(totalMarks) : 0,
+              passingMarks: passingMarks ? Number(passingMarks) : 0,
+              negativeMarkingEnabled,
+              negativeMarks: negativeMarks ? Number(negativeMarks) : 0,
+            }
+          : {}),
       });
-      nav.replace({ name: 'manageQuestions', testId });
+      nav.replace(
+        format === 'pdf' ? { name: 'uploadTestPdf', testId } : { name: 'manageQuestions', testId }
+      );
     } catch (err) {
       Alert.alert('Failed to save configuration', err instanceof Error ? err.message : '');
     } finally {
@@ -83,7 +92,7 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
   };
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <AdminHeader title="Test Configuration" subtitle="Step 2 of 5" onBack={() => nav.pop()} />
       <StepProgressHeader
         steps={['Basic Info', 'Config', 'Questions', 'Preview', 'Publish']}
@@ -91,28 +100,32 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          <View style={styles.row}>
-            <View style={styles.col}>
-              <Text style={styles.label}>Total Questions</Text>
-              <FormInput
-                icon="help-circle-outline"
-                placeholder="50"
-                value={totalQuestions}
-                onChangeText={setTotalQuestions}
-                keyboardType="number-pad"
-              />
-            </View>
-            <View style={styles.col}>
-              <Text style={styles.label}>Total Marks</Text>
-              <FormInput
-                icon="ribbon-outline"
-                placeholder="100"
-                value={totalMarks}
-                onChangeText={setTotalMarks}
-                keyboardType="number-pad"
-              />
-            </View>
-          </View>
+          {format === 'mcq' && (
+            <>
+              <View style={styles.row}>
+                <View style={styles.col}>
+                  <Text style={styles.label}>Total Questions</Text>
+                  <FormInput
+                    icon="help-circle-outline"
+                    placeholder="50"
+                    value={totalQuestions}
+                    onChangeText={setTotalQuestions}
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <View style={styles.col}>
+                  <Text style={styles.label}>Total Marks</Text>
+                  <FormInput
+                    icon="ribbon-outline"
+                    placeholder="100"
+                    value={totalMarks}
+                    onChangeText={setTotalMarks}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+            </>
+          )}
 
           <View style={styles.row}>
             <View style={styles.col}>
@@ -125,35 +138,41 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
                 keyboardType="number-pad"
               />
             </View>
-            <View style={styles.col}>
-              <Text style={styles.label}>Passing Marks</Text>
-              <FormInput
-                icon="checkmark-circle-outline"
-                placeholder="40"
-                value={passingMarks}
-                onChangeText={setPassingMarks}
-                keyboardType="number-pad"
-              />
-            </View>
+            {format === 'mcq' && (
+              <View style={styles.col}>
+                <Text style={styles.label}>Passing Marks</Text>
+                <FormInput
+                  icon="checkmark-circle-outline"
+                  placeholder="40"
+                  value={passingMarks}
+                  onChangeText={setPassingMarks}
+                  keyboardType="number-pad"
+                />
+              </View>
+            )}
           </View>
 
-          <ToggleRow
-            label="Negative Marking"
-            description="Deduct marks for wrong answers"
-            value={negativeMarkingEnabled}
-            onChange={setNegativeMarkingEnabled}
-          />
-
-          {negativeMarkingEnabled && (
+          {format === 'mcq' && (
             <>
-              <Text style={[styles.label, { marginTop: 14 }]}>Negative Marks per Question</Text>
-              <FormInput
-                icon="remove-circle-outline"
-                placeholder="0.25"
-                value={negativeMarks}
-                onChangeText={setNegativeMarks}
-                keyboardType="decimal-pad"
+              <ToggleRow
+                label="Negative Marking"
+                description="Deduct marks for wrong answers"
+                value={negativeMarkingEnabled}
+                onChange={setNegativeMarkingEnabled}
               />
+
+              {negativeMarkingEnabled && (
+                <>
+                  <Text style={[styles.label, { marginTop: 14 }]}>Negative Marks per Question</Text>
+                  <FormInput
+                    icon="remove-circle-outline"
+                    placeholder="0.25"
+                    value={negativeMarks}
+                    onChangeText={setNegativeMarks}
+                    keyboardType="decimal-pad"
+                  />
+                </>
+              )}
             </>
           )}
 
@@ -205,7 +224,7 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
           <PrimaryButton label="SAVE & CONTINUE" onPress={handleSave} loading={saving || loading} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 

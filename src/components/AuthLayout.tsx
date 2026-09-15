@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CREAM, GOLD, MUTED, NAVY } from '../theme/colors';
 
 type Props = {
@@ -31,13 +32,15 @@ export default function AuthLayout({
   footerActionText,
   onFooterAction,
 }: Props) {
+  const insets = useSafeAreaInsets();
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {onBack && (
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { paddingTop: insets.top + 20 }]}>
           <Pressable style={styles.backBtn} onPress={onBack} hitSlop={10}>
             <Ionicons name="arrow-back" size={20} color={NAVY} />
           </Pressable>

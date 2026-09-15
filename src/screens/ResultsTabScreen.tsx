@@ -154,14 +154,22 @@ export default function ResultsTabScreen({ token, nav }: Props) {
               </Text>
               <Text style={styles.historyDate}>{formatDate(item.submittedAt)}</Text>
             </View>
-            <Text style={styles.historyMeta}>
-              Score: <Text style={styles.historyMetaBold}>{item.score}/100 ({item.scorePercent}%)</Text>
-              {'   '}Rank: <Text style={styles.historyMetaBold}>#{item.rank}</Text>
-            </Text>
-            <View style={styles.historyBottomRow}>
-              <Text style={[styles.passedText, !item.passed && styles.failedText]}>
-                {item.passed ? 'Passed' : 'Not Passed'}
+            {item.format === 'pdf' ? (
+              <Text style={styles.historyMeta}>PDF Test • Submitted</Text>
+            ) : (
+              <Text style={styles.historyMeta}>
+                Score: <Text style={styles.historyMetaBold}>{item.score}/100 ({item.scorePercent}%)</Text>
+                {'   '}Rank: <Text style={styles.historyMetaBold}>#{item.rank}</Text>
               </Text>
+            )}
+            <View style={styles.historyBottomRow}>
+              {item.format === 'pdf' ? (
+                <Text style={styles.historyMeta}>View your answer key from the result screen</Text>
+              ) : (
+                <Text style={[styles.passedText, !item.passed && styles.failedText]}>
+                  {item.passed ? 'Passed' : 'Not Passed'}
+                </Text>
+              )}
               <Pressable
                 style={styles.viewResultBtn}
                 onPress={() => nav.push({ name: 'testResult', attemptId: item.attemptId })}

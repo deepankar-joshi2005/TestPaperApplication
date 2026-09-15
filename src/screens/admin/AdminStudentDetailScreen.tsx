@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminHeader from '../../components/admin/AdminHeader';
 import { AdminNav } from '../../navigation/adminTypes';
 import { AdminStudentDetail, getStudentDetail } from '../../services/admin/students.service';
@@ -39,7 +40,7 @@ export default function AdminStudentDetailScreen({ token, studentId, nav }: Prop
   }, [load]);
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <AdminHeader title={detail?.name ?? 'Student'} subtitle={detail?.email} onBack={() => nav.pop()} />
 
       {loading && (
@@ -86,7 +87,7 @@ export default function AdminStudentDetailScreen({ token, studentId, nav }: Prop
           ))}
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

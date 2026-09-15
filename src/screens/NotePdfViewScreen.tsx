@@ -1,0 +1,109 @@
+import { Ionicons } from '@expo/vector-icons';
+import { usePreventScreenCapture } from 'expo-screen-capture';
+import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
+import { resolveAssetUrl } from '../config/api';
+import { Nav } from '../navigation/types';
+import { ERROR, MUTED, NAVY } from '../theme/colors';
+import { buildPdfViewerHtml } from '../utils/pdfViewer';
+
+type Props = {
+  title: string;
+  pdfUrl: string;
+  nav: Nav;
+};
+
+export default function NotePdfViewScreen({ title, pdfUrl, nav }: Props) {
+  // Blocks screenshots & screen recording while this screen is open.
+  usePreventScreenCapture();
+  const resolvedUrl = resolveAssetUrl(pdfUrl);
+  const [webViewError, setWebViewError] = useState('');
+
+  return (
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <StatusBar style="dark" />
+
+      {/* Header Bar — cleanly presents the Subject / Chapter Title above the PDF */}
+      <View style={styles.headerRow}>
+        <Pressable style={styles.iconBtn} onPress={nav.pop} hitSlop={8}>
+          <Ionicons name="chevron-back" size={22} color={NAVY} />
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={styles.iconBtn} />
+      </View>
+
+      <View style={styles.content}>
+        {resolvedUrl ? (
+          <WebView
+            style={{ flex: 1 }}
+            originWhitelist={['*']}
+            mixedContentMode="always"
+            javaScriptEnabled
+            domStorageEnabled
+            source={{ html: buildPdfViewerHtml(resolvedUrl) }}
+            onError={(e) =>
+              setWebViewError(`Could not open the PDF viewer: ${e.nativeEvent.description}`)
+            }
+            onHttpError={(e) =>
+              setWebViewError(`Server error loading PDF (HTTP ${e.nativeEvent.statusCode}).`)
+            }
+          />
+        ) : (
+          <View style={styles.centerBox}>
+            <Ionicons name="document-text-outline" size={36} color={MUTED} />
+            <Text style={styles.errorText}>This chapter's PDF hasn't been uploaded yet.</Text>
+          </View>
+        )}
+
+        {!!webViewError && (
+          <View style={styles.webViewErrorBanner}>
+            <Text style={styles.webViewErrorText}>{webViewError}</Text>
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#F5F4EF' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDEBE4',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    zIndex: 10,
+  },
+  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: '800', color: NAVY },
+  content: { flex: 1, backgroundColor: '#EBF0F5' },
+  centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24 },
+  errorText: { color: MUTED, fontSize: 13, textAlign: 'center' },
+  webViewErrorBanner: {
+    position: 'absolute',
+    top: 12,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(251,234,232,0.96)',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#F5C6CB',
+  },
+  webViewErrorText: { color: ERROR, fontSize: 12, textAlign: 'center' },
+});

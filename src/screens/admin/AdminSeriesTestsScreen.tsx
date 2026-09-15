@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminHeader from '../../components/admin/AdminHeader';
 import PrimaryButton from '../../components/PrimaryButton';
 import { AdminNav } from '../../navigation/adminTypes';
@@ -39,7 +40,7 @@ export default function AdminSeriesTestsScreen({ token, seriesId, nav }: Props) 
   const totalQuestions = (tests ?? []).reduce((sum, t) => sum + t.totalQuestions, 0);
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <AdminHeader
         title={seriesTitle || 'Test Series'}
         subtitle="Manage all tests in this series"
@@ -85,9 +86,18 @@ export default function AdminSeriesTestsScreen({ token, seriesId, nav }: Props) 
 
           {tests.map((t) => (
             <View key={t.id} style={styles.card}>
-              <Text style={styles.title}>{t.title}</Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.title}>{t.title}</Text>
+                {t.format === 'pdf' && (
+                  <View style={styles.pdfBadge}>
+                    <Text style={styles.pdfBadgeText}>PDF</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.meta}>
-                {t.totalQuestions} Questions • {t.durationMinutes} Minutes • {t.totalMarks} Marks
+                {t.format === 'pdf'
+                  ? `${t.durationMinutes} Minutes • PDF Test`
+                  : `${t.totalQuestions} Questions • ${t.durationMinutes} Minutes • ${t.totalMarks} Marks`}
               </Text>
               <View style={styles.cardFooter}>
                 <View
@@ -111,8 +121,18 @@ export default function AdminSeriesTestsScreen({ token, seriesId, nav }: Props) 
                   >
                     <Text style={styles.linkText}>Edit</Text>
                   </Pressable>
-                  <Pressable onPress={() => nav.push({ name: 'manageQuestions', testId: t.id })}>
-                    <Text style={styles.linkText}>Questions</Text>
+                  <Pressable
+                    onPress={() =>
+                      nav.push(
+                        t.format === 'pdf'
+                          ? { name: 'uploadTestPdf', testId: t.id }
+                          : { name: 'manageQuestions', testId: t.id }
+                      )
+                    }
+                  >
+                    <Text style={styles.linkText}>
+                      {t.format === 'pdf' ? 'Upload PDF' : 'Questions'}
+                    </Text>
                   </Pressable>
                 </View>
               </View>
@@ -120,7 +140,7 @@ export default function AdminSeriesTestsScreen({ token, seriesId, nav }: Props) 
           ))}
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -151,7 +171,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#EDEBE4',
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 14, fontWeight: '800', color: NAVY },
+  pdfBadge: { backgroundColor: '#EEF1F7', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  pdfBadgeText: { fontSize: 9.5, fontWeight: '800', color: NAVY },
   meta: { fontSize: 11.5, color: MUTED, marginTop: 5 },
   cardFooter: {
     flexDirection: 'row',

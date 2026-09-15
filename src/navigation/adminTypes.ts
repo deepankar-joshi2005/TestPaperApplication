@@ -13,15 +13,22 @@ export type AdminRoute =
   | { name: 'createTestStep1'; seriesId: string; testId?: string }
   | { name: 'createTestStep2'; testId: string }
   | { name: 'manageQuestions'; testId: string }
+  | { name: 'uploadTestPdf'; testId: string }
   | { name: 'questionBank'; testId?: string }
   | { name: 'addQuestion'; testId?: string; questionId?: string; subject?: string }
   | { name: 'questionPreview'; questionId: string; testId?: string }
   | { name: 'importQuestions'; testId: string }
+  | { name: 'subjectSections'; testId: string }
   | { name: 'studentPreview'; testId: string }
   | { name: 'publishTest'; testId: string }
   | { name: 'publishSuccess'; testId: string }
   | { name: 'studentDetail'; studentId: string }
-  | { name: 'resultsForTest'; testId: string; testTitle: string };
+  | { name: 'resultsForTest'; testId: string; testTitle: string }
+  | { name: 'notesCategoryList' }
+  | { name: 'notesSubjects'; category: string }
+  | { name: 'addNotesSubject'; category: string; subjectId?: string }
+  | { name: 'notesList'; subjectId: string; subjectName: string }
+  | { name: 'addNote'; subjectId: string; noteId?: string };
 
 export type AdminNav = {
   push: (route: AdminRoute) => void;
@@ -42,13 +49,21 @@ const TESTS_TAB_ROUTES = new Set<AdminRoute['name']>([
   'createTestStep1',
   'createTestStep2',
   'manageQuestions',
+  'uploadTestPdf',
   'questionBank',
   'addQuestion',
   'questionPreview',
   'importQuestions',
+  'subjectSections',
   'studentPreview',
   'publishTest',
   'publishSuccess',
+]);
+
+const NOTES_TAB_ROUTES = new Set<AdminRoute['name']>([
+  'notesCategoryList',
+  'notesSubjects',
+  'notesList',
 ]);
 
 const NO_TAB_BAR_ROUTES = new Set<AdminRoute['name']>([
@@ -58,6 +73,8 @@ const NO_TAB_BAR_ROUTES = new Set<AdminRoute['name']>([
   'createTestStep1',
   'createTestStep2',
   'addQuestion',
+  'addNotesSubject',
+  'addNote',
 ]);
 
 export const adminRouteTab = (route: AdminRoute): AdminTabKey | null => {
@@ -65,6 +82,7 @@ export const adminRouteTab = (route: AdminRoute): AdminTabKey | null => {
   if (route.name === 'studentDetail') return 'students';
   if (route.name === 'resultsForTest') return 'results';
   if (TESTS_TAB_ROUTES.has(route.name)) return 'tests';
+  if (NOTES_TAB_ROUTES.has(route.name)) return 'home';
   return null;
 };
 

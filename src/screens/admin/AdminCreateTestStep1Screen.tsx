@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AdminHeader from '../../components/admin/AdminHeader';
 import StepProgressHeader from '../../components/admin/StepProgressHeader';
 import FormInput from '../../components/FormInput';
 import PrimaryButton from '../../components/PrimaryButton';
 import { AdminNav } from '../../navigation/adminTypes';
 import { getSeriesDetail } from '../../services/admin/series.service';
-import { createTest, getTestDetail, updateTestConfig } from '../../services/admin/tests.service';
+import {
+  createTest,
+  getTestDetail,
+  TestFormat,
+  updateTestConfig,
+} from '../../services/admin/tests.service';
 import { MUTED, NAVY } from '../../theme/colors';
 
 type Props = {
@@ -24,6 +30,7 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
   const [subject, setSubject] = useState('Multiple Subjects');
   const [description, setDescription] = useState('');
   const [difficulty, setDifficulty] = useState('Mixed');
+  const [format, setFormat] = useState<TestFormat>('mcq');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -38,6 +45,7 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
           setSubject(test.subject);
           setDescription(test.description);
           setDifficulty(test.difficulty);
+          setFormat(test.format);
         }
       } catch (err) {
         Alert.alert('Failed to load', err instanceof Error ? err.message : '');
@@ -61,6 +69,7 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
           subject,
           description,
           difficulty,
+          format,
         });
       } else {
         const created = await createTest(token, {
@@ -69,6 +78,7 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
           subject,
           description,
           difficulty,
+          format,
         });
         resolvedTestId = created._id;
       }
@@ -81,7 +91,7 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
   };
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.root} edges={['top']}>
       <AdminHeader title="Create Test" subtitle="Step 1 of 5" onBack={() => nav.pop()} />
       <StepProgressHeader
         steps={['Basic Info', 'Config', 'Questions', 'Preview', 'Publish']}
@@ -96,6 +106,32 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
             value={title}
             onChangeText={setTitle}
           />
+
+          <Text style={styles.label}>Test Format</Text>
+          <View style={styles.formatRow}>
+            <Pressable
+              style={[styles.formatCard, format === 'mcq' && styles.formatCardActive]}
+              onPress={() => setFormat('mcq')}
+            >
+              <Text style={[styles.formatTitle, format === 'mcq' && styles.formatTitleActive]}>
+                MCQ Test
+              </Text>
+              <Text style={[styles.formatDesc, format === 'mcq' && styles.formatDescActive]}>
+                Question bank, options, auto-scoring
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.formatCard, format === 'pdf' && styles.formatCardActive]}
+              onPress={() => setFormat('pdf')}
+            >
+              <Text style={[styles.formatTitle, format === 'pdf' && styles.formatTitleActive]}>
+                PDF Test
+              </Text>
+              <Text style={[styles.formatDesc, format === 'pdf' && styles.formatDescActive]}>
+                Upload question paper + answer key as PDF/image
+              </Text>
+            </Pressable>
+          </View>
 
           <Text style={styles.label}>Select Test Series</Text>
           <View style={styles.readonlyField}>
@@ -135,7 +171,7 @@ export default function AdminCreateTestStep1Screen({ token, seriesId, testId, na
           <PrimaryButton label="SAVE & CONTINUE" onPress={handleContinue} loading={saving || loading} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -154,6 +190,20 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   readonlyText: { fontSize: 14, color: NAVY, fontWeight: '600' },
+  formatRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  formatCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#D9D6CC',
+    padding: 14,
+  },
+  formatCardActive: { borderColor: NAVY, backgroundColor: '#EEF1F7' },
+  formatTitle: { fontSize: 13.5, fontWeight: '800', color: MUTED },
+  formatTitleActive: { color: NAVY },
+  formatDesc: { fontSize: 10.5, color: MUTED, marginTop: 4 },
+  formatDescActive: { color: NAVY },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
   pill: {
     paddingHorizontal: 14,

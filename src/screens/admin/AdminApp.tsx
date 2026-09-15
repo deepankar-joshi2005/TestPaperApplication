@@ -20,13 +20,20 @@ import AdminSeriesTestsScreen from './AdminSeriesTestsScreen';
 import AdminCreateTestStep1Screen from './AdminCreateTestStep1Screen';
 import AdminCreateTestStep2Screen from './AdminCreateTestStep2Screen';
 import AdminManageQuestionsScreen from './AdminManageQuestionsScreen';
+import AdminUploadTestPdfScreen from './AdminUploadTestPdfScreen';
 import AdminQuestionBankScreen from './AdminQuestionBankScreen';
 import AdminAddQuestionScreen from './AdminAddQuestionScreen';
 import AdminQuestionPreviewScreen from './AdminQuestionPreviewScreen';
 import AdminImportQuestionsScreen from './AdminImportQuestionsScreen';
+import AdminSubjectSectionsScreen from './AdminSubjectSectionsScreen';
 import AdminStudentPreviewScreen from './AdminStudentPreviewScreen';
 import AdminPublishTestScreen from './AdminPublishTestScreen';
 import AdminPublishSuccessScreen from './AdminPublishSuccessScreen';
+import AdminNotesCategoriesScreen from './AdminNotesCategoriesScreen';
+import AdminNotesSubjectsScreen from './AdminNotesSubjectsScreen';
+import AdminAddSubjectScreen from './AdminAddSubjectScreen';
+import AdminNotesListScreen from './AdminNotesListScreen';
+import AdminAddNoteScreen from './AdminAddNoteScreen';
 
 type Props = {
   user: AuthUser;
@@ -118,6 +125,9 @@ export default function AdminApp({ user, token, onLogout }: Props) {
         {current.name === 'manageQuestions' && (
           <AdminManageQuestionsScreen token={token} testId={current.testId} nav={nav} />
         )}
+        {current.name === 'uploadTestPdf' && (
+          <AdminUploadTestPdfScreen token={token} testId={current.testId} nav={nav} />
+        )}
         {current.name === 'questionBank' && (
           <AdminQuestionBankScreen token={token} testId={current.testId} nav={nav} />
         )}
@@ -141,6 +151,9 @@ export default function AdminApp({ user, token, onLogout }: Props) {
         {current.name === 'importQuestions' && (
           <AdminImportQuestionsScreen token={token} testId={current.testId} nav={nav} />
         )}
+        {current.name === 'subjectSections' && (
+          <AdminSubjectSectionsScreen token={token} testId={current.testId} nav={nav} />
+        )}
         {current.name === 'studentPreview' && (
           <AdminStudentPreviewScreen token={token} testId={current.testId} nav={nav} />
         )}
@@ -149,6 +162,37 @@ export default function AdminApp({ user, token, onLogout }: Props) {
         )}
         {current.name === 'publishSuccess' && (
           <AdminPublishSuccessScreen token={token} testId={current.testId} nav={nav} />
+        )}
+
+        {current.name === 'notesCategoryList' && (
+          <AdminNotesCategoriesScreen token={token} nav={nav} />
+        )}
+        {current.name === 'notesSubjects' && (
+          <AdminNotesSubjectsScreen token={token} category={current.category} nav={nav} />
+        )}
+        {current.name === 'addNotesSubject' && (
+          <AdminAddSubjectScreen
+            token={token}
+            category={current.category}
+            subjectId={current.subjectId}
+            nav={nav}
+          />
+        )}
+        {current.name === 'notesList' && (
+          <AdminNotesListScreen
+            token={token}
+            subjectId={current.subjectId}
+            subjectName={current.subjectName}
+            nav={nav}
+          />
+        )}
+        {current.name === 'addNote' && (
+          <AdminAddNoteScreen
+            token={token}
+            subjectId={current.subjectId}
+            noteId={current.noteId}
+            nav={nav}
+          />
         )}
       </View>
 

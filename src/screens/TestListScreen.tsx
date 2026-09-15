@@ -66,23 +66,25 @@ export default function TestListScreen({ token, category, nav }: Props) {
   }, [load]);
 
   const handleStartOrResume = async (test: TestListItem) => {
-    if (test.status === 'completed') {
-      nav.push({ name: 'testResult', attemptId: test.attemptId! });
-      return;
-    }
+    const routeName = test.format === 'pdf' ? 'pdfTestTaking' : 'testTaking';
+
     if (test.status === 'in-progress' && test.attemptId) {
-      nav.push({ name: 'testTaking', attemptId: test.attemptId, testId: test.id });
+      nav.push({ name: routeName, attemptId: test.attemptId, testId: test.id });
       return;
     }
     setStartingId(test.id);
     try {
       const result = await startAttempt(token, test.id);
-      nav.push({ name: 'testTaking', attemptId: result.attemptId, testId: test.id });
+      nav.push({ name: routeName, attemptId: result.attemptId, testId: test.id });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start test.');
     } finally {
       setStartingId(null);
     }
+  };
+
+  const handleViewResult = (test: TestListItem) => {
+    if (test.attemptId) nav.push({ name: 'testResult', attemptId: test.attemptId });
   };
 
   const filteredTests = tests?.filter((t) => filterMatches(filter, t.status)) ?? [];
@@ -105,7 +107,7 @@ export default function TestListScreen({ token, category, nav }: Props) {
         </Pressable>
       </View>
 
-      {!!bannerImage && (
+      {!!bannerImage?.trim() && (
         <Image
           source={{ uri: resolveAssetUrl(bannerImage) }}
           style={styles.banner}
@@ -116,6 +118,7 @@ export default function TestListScreen({ token, category, nav }: Props) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
         contentContainerStyle={styles.filterRow}
       >
         {FILTERS.map((f) => (
@@ -130,6 +133,7 @@ export default function TestListScreen({ token, category, nav }: Props) {
       </ScrollView>
 
       <ScrollView
+        style={styles.mainScroll}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={NAVY} />
@@ -167,12 +171,24 @@ export default function TestListScreen({ token, category, nav }: Props) {
                   <Text style={styles.scoreText}>
                     Score: {test.score}/{test.totalMarks}
                   </Text>
-                  <Pressable
-                    style={styles.outlineBtn}
-                    onPress={() => handleStartOrResume(test)}
-                  >
-                    <Text style={styles.outlineBtnText}>View Result</Text>
-                  </Pressable>
+                  <View style={styles.completedBtnRow}>
+                    <Pressable style={styles.outlineBtn} onPress={() => handleViewResult(test)}>
+                      <Text style={styles.outlineBtnText}>View Result</Text>
+                    </Pressable>
+                    {test.canReattempt && (
+                      <Pressable
+                        style={styles.primaryBtnSmall}
+                        onPress={() => handleStartOrResume(test)}
+                        disabled={startingId === test.id}
+                      >
+                        {startingId === test.id ? (
+                          <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                          <Text style={styles.primaryBtnSmallText}>Reattempt</Text>
+                        )}
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               ) : (
                 <Pressable
@@ -251,12 +267,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: '#EEF1F7',
   },
+  filterScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+    height: 52,
+  },
   filterRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 10,
     paddingHorizontal: 18,
-    paddingBottom: 12,
+    paddingVertical: 8,
   },
   filterPill: {
     paddingHorizontal: 16,
@@ -278,8 +299,12 @@ const styles = StyleSheet.create({
   filterTextActive: {
     color: '#FFFFFF',
   },
+  mainScroll: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 18,
+    paddingTop: 4,
     paddingBottom: 24,
     gap: 14,
   },
@@ -379,6 +404,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: NAVY,
   },
+  completedBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   outlineBtn: {
     borderWidth: 1.3,
     borderColor: NAVY,
@@ -387,6 +416,19 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   outlineBtnText: {
+    color: NAVY,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  primaryBtnSmall: {
+    backgroundColor: GOLD,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    minWidth: 84,
+    alignItems: 'center',
+  },
+  primaryBtnSmallText: {
     color: NAVY,
     fontWeight: '700',
     fontSize: 12,

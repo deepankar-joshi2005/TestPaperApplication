@@ -15,25 +15,41 @@ export interface AttemptAnswer {
   markedForReview: boolean;
 }
 
+export interface SubjectSection {
+  name: string;
+  startNo: number;
+  endNo: number;
+}
+
 export interface StartAttemptResponse {
   attemptId: string;
   test: {
     id: string;
     title: string;
+    format: 'mcq' | 'pdf';
+    questionPdfUrl?: string | null;
     totalQuestions: number;
     durationMinutes: number;
     totalMarks: number;
     negativeMarks: number;
+    subjectSections: SubjectSection[];
   };
   startedAt: string;
   questions: AttemptQuestion[];
   answers: AttemptAnswer[];
 }
 
-export interface AttemptResult {
+export interface SectionBreakdown {
+  name: string;
+  correct: number;
+  total: number;
+}
+
+export interface McqAttemptResult {
   attemptId: string;
   testId: string;
   title: string;
+  format?: 'mcq';
   score: number;
   totalMarks: number;
   scorePercent: number;
@@ -45,7 +61,21 @@ export interface AttemptResult {
   timeTakenSeconds: number;
   rank: number | null;
   totalCandidates: number | null;
+  sectionBreakdown: SectionBreakdown[];
 }
+
+export interface PdfAttemptResult {
+  attemptId: string;
+  testId: string;
+  title: string;
+  format: 'pdf';
+  timeTakenSeconds: number;
+  questionPdfUrl: string | null;
+  answerKeyUrl: string | null;
+  answerKeyType: 'pdf' | 'image' | null;
+}
+
+export type AttemptResult = McqAttemptResult | PdfAttemptResult;
 
 export interface SolutionQuestion {
   index: number;
@@ -62,17 +92,19 @@ export interface SolutionQuestion {
 
 export interface SolutionsResponse {
   testTitle: string;
+  subjectSections: SubjectSection[];
   questions: SolutionQuestion[];
 }
 
 export interface HistoryItem {
   attemptId: string;
   title: string;
-  score: number;
-  scorePercent: number;
+  format: 'mcq' | 'pdf';
+  score: number | null;
+  scorePercent: number | null;
   rank: number | null;
   totalCandidates: number | null;
-  passed: boolean;
+  passed: boolean | null;
   submittedAt: string;
 }
 

@@ -1,6 +1,15 @@
 import { isAxiosError } from 'axios';
 import api from '../../config/api';
 
+export interface SubjectSection {
+  name: string;
+  startNo: number;
+  endNo: number;
+}
+
+export type TestFormat = 'mcq' | 'pdf';
+export type AnswerKeyType = 'pdf' | 'image';
+
 export interface AdminTestDetail {
   _id: string;
   series: string;
@@ -18,6 +27,11 @@ export interface AdminTestDetail {
   startDate: string | null;
   endDate: string | null;
   status: 'draft' | 'published';
+  subjectSections: SubjectSection[];
+  format: TestFormat;
+  questionPdfUrl: string | null;
+  answerKeyUrl: string | null;
+  answerKeyType: AnswerKeyType | null;
 }
 
 export interface CreateTestPayload {
@@ -26,6 +40,7 @@ export interface CreateTestPayload {
   subject?: string;
   description?: string;
   difficulty?: string;
+  format?: TestFormat;
 }
 
 export interface UpdateTestConfigPayload {
@@ -42,6 +57,10 @@ export interface UpdateTestConfigPayload {
   maxAttempts?: number;
   startDate?: string | null;
   endDate?: string | null;
+  format?: TestFormat;
+  questionPdfUrl?: string | null;
+  answerKeyUrl?: string | null;
+  answerKeyType?: AnswerKeyType | null;
 }
 
 export interface AdminTestListItem {
@@ -53,9 +72,10 @@ export interface AdminTestListItem {
   attemptCount: number;
 }
 
-export interface PublishChecklist {
+export interface McqPublishChecklist {
   testId: string;
   title: string;
+  format: 'mcq';
   questionCount: number;
   checklist: {
     nameAdded: boolean;
@@ -72,6 +92,24 @@ export interface PublishChecklist {
     negativeMarks: number;
   };
 }
+
+export interface PdfPublishChecklist {
+  testId: string;
+  title: string;
+  format: 'pdf';
+  checklist: {
+    nameAdded: boolean;
+    durationSet: boolean;
+    questionPdfUploaded: boolean;
+    answerKeyUploaded: boolean;
+    allValidated: boolean;
+  };
+  summary: {
+    durationMinutes: number;
+  };
+}
+
+export type PublishChecklist = McqPublishChecklist | PdfPublishChecklist;
 
 const authHeaders = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 
@@ -168,5 +206,22 @@ export const deleteTest = async (token: string, testId: string): Promise<void> =
     await api.delete(`/admin/tests/${testId}`, authHeaders(token));
   } catch (error) {
     throw new Error(extractErrorMessage(error, 'Failed to delete test.'));
+  }
+};
+
+export const setSubjectSections = async (
+  token: string,
+  testId: string,
+  payload: { enabled: boolean; sections: SubjectSection[] }
+): Promise<AdminTestDetail> => {
+  try {
+    const response = await api.put<AdminTestDetail>(
+      `/admin/tests/${testId}/subject-sections`,
+      payload,
+      authHeaders(token)
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error, 'Failed to save subject sections.'));
   }
 };

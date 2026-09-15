@@ -3,11 +3,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GOLD, MUTED, NAVY } from '../theme/colors';
 
-export type TabKey = 'home' | 'tests' | 'results' | 'profile';
+export type TabKey = 'home' | 'tests' | 'notes' | 'results' | 'profile';
 
 const TABS: { key: TabKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'home', label: 'Home', icon: 'home-outline' },
   { key: 'tests', label: 'Tests', icon: 'book-outline' },
+  { key: 'notes', label: 'Notes', icon: 'document-text-outline' },
   { key: 'results', label: 'Results', icon: 'trophy-outline' },
   { key: 'profile', label: 'Profile', icon: 'person-outline' },
 ];

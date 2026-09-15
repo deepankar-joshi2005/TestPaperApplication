@@ -79,6 +79,7 @@ export interface UpdateSeriesPayload {
 export interface AdminSeriesTestItem {
   id: string;
   title: string;
+  format: 'mcq' | 'pdf';
   totalQuestions: number;
   durationMinutes: number;
   totalMarks: number;

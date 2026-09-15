@@ -11,19 +11,18 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import NotificationBell from '../components/NotificationBell';
 import { resolveAssetUrl } from '../config/api';
 import { Nav } from '../navigation/types';
-import { getTestSeriesSummary, TestSeriesSummary } from '../services/tests.service';
-import { GOLD, MUTED, NAVY } from '../theme/colors';
+import { getNotesSummary, NotesCategorySummary } from '../services/notes.service';
+import { MUTED, NAVY } from '../theme/colors';
 
 type Props = {
   token: string;
   nav: Nav;
 };
 
-export default function TestsScreen({ token, nav }: Props) {
-  const [series, setSeries] = useState<TestSeriesSummary[] | null>(null);
+export default function NotesScreen({ token, nav }: Props) {
+  const [categories, setCategories] = useState<NotesCategorySummary[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -33,10 +32,10 @@ export default function TestsScreen({ token, nav }: Props) {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError('');
       try {
-        const result = await getTestSeriesSummary(token);
-        setSeries(result);
+        const result = await getNotesSummary(token);
+        setCategories(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load test series.');
+        setError(err instanceof Error ? err.message : 'Failed to load notes.');
       } finally {
         isRefresh ? setRefreshing(false) : setLoading(false);
       }
@@ -51,13 +50,14 @@ export default function TestsScreen({ token, nav }: Props) {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Test Series</Text>
-        <NotificationBell
-          token={token}
-          size={22}
+        <Text style={styles.headerTitle}>Notes</Text>
+        <Pressable
           style={styles.bellBtn}
+          hitSlop={8}
           onPress={() => nav.push({ name: 'notifications' })}
-        />
+        >
+          <Ionicons name="notifications-outline" size={22} color={NAVY} />
+        </Pressable>
       </View>
 
       <ScrollView
@@ -66,13 +66,13 @@ export default function TestsScreen({ token, nav }: Props) {
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={NAVY} />
         }
       >
-        {loading && !series && (
+        {loading && !categories && (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={NAVY} size="large" />
           </View>
         )}
 
-        {!!error && !series && (
+        {!!error && !categories && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
             <Pressable onPress={() => load()}>
@@ -81,11 +81,11 @@ export default function TestsScreen({ token, nav }: Props) {
           </View>
         )}
 
-        {series?.map((item) => (
+        {categories?.map((item) => (
           <Pressable
             style={styles.card}
             key={item.category}
-            onPress={() => nav.push({ name: 'testList', category: item.category })}
+            onPress={() => nav.push({ name: 'notesSubjectList', category: item.category })}
           >
             <View style={styles.cardTopRow}>
               <View style={styles.cardTitleRow}>
@@ -96,38 +96,26 @@ export default function TestsScreen({ token, nav }: Props) {
                       style={styles.categoryIconImg}
                     />
                   ) : (
-                    <Ionicons name="reader-outline" size={16} color={NAVY} />
+                    <Ionicons name="document-text-outline" size={16} color={NAVY} />
                   )}
                 </View>
-                <Text style={styles.cardTitle}>{item.category} Test Series</Text>
+                <Text style={styles.cardTitle}>{item.category} Notes</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={NAVY} />
             </View>
 
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
-                <Ionicons name="reader-outline" size={14} color={NAVY} />
-                <Text style={styles.metaText}>{item.totalTests} Tests</Text>
+                <Ionicons name="library-outline" size={14} color={NAVY} />
+                <Text style={styles.metaText}>{item.subjectCount} Subjects</Text>
               </View>
-              <View style={styles.metaItem}>
-                <Ionicons name="help-circle-outline" size={14} color={NAVY} />
-                <Text style={styles.metaText}>{item.totalQuestions} Qs</Text>
-              </View>
-              <View style={styles.metaItem}>
-                <Ionicons name="time-outline" size={14} color={NAVY} />
-                <Text style={styles.metaText}>{item.durationMinutes} mins</Text>
-              </View>
-            </View>
-
-            <View style={styles.progressLabelRow}>
-              <Text style={styles.difficultyText}>{item.difficulty}</Text>
-              <Text style={styles.percentText}>{item.percentCompleted}% Completed</Text>
-            </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${item.percentCompleted}%` }]} />
             </View>
           </Pressable>
         ))}
+
+        {categories && categories.length === 0 && (
+          <Text style={styles.emptyText}>No notes have been added yet.</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -234,30 +222,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: MUTED,
   },
-  progressLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    marginBottom: 6,
-  },
-  difficultyText: {
-    fontSize: 11.5,
+  emptyText: {
+    textAlign: 'center',
     color: MUTED,
-  },
-  percentText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: NAVY,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EEEDE6',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-    backgroundColor: GOLD,
+    marginTop: 30,
   },
 });

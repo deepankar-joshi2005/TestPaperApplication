@@ -21,6 +21,15 @@ const INSTRUCTIONS = [
   'You can mark any question to review later before submitting the test.',
 ];
 
+const PDF_INSTRUCTIONS = [
+  'The exam clock will run automatically once you begin.',
+  'Make sure your internet connection remains uninterrupted.',
+  'Do not close or minimize the app during the exam.',
+  'This test is a PDF question paper — read through it carefully and answer on your own sheet.',
+  'Tap "Submit Test" whenever you are done, or it will auto-submit when time runs out.',
+  'The official answer key will be available right after you submit.',
+];
+
 export default function TestInstructionsScreen({ token, testId, nav }: Props) {
   const [data, setData] = useState<TestInstructions | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +55,11 @@ export default function TestInstructionsScreen({ token, testId, nav }: Props) {
     setError('');
     try {
       const result = await startAttempt(token, testId);
-      nav.push({ name: 'testTaking', attemptId: result.attemptId, testId });
+      nav.push(
+        result.test.format === 'pdf'
+          ? { name: 'pdfTestTaking', attemptId: result.attemptId, testId }
+          : { name: 'testTaking', attemptId: result.attemptId, testId }
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start test.');
     } finally {
@@ -89,14 +102,23 @@ export default function TestInstructionsScreen({ token, testId, nav }: Props) {
             <Text style={styles.title}>{data.title}</Text>
 
             <View style={styles.statsGrid}>
-              <StatBox label="Questions" value={`${data.totalQuestions} Qs`} />
-              <StatBox label="Total Marks" value={`${data.totalMarks} Marks`} />
-              <StatBox label="Duration" value={`${data.durationMinutes} Mins`} />
-              <StatBox label="Negative Marking" value={`-${data.negativeMarks} Marks`} />
+              {data.format === 'pdf' ? (
+                <>
+                  <StatBox label="Format" value="PDF Test" />
+                  <StatBox label="Duration" value={`${data.durationMinutes} Mins`} />
+                </>
+              ) : (
+                <>
+                  <StatBox label="Questions" value={`${data.totalQuestions} Qs`} />
+                  <StatBox label="Total Marks" value={`${data.totalMarks} Marks`} />
+                  <StatBox label="Duration" value={`${data.durationMinutes} Mins`} />
+                  <StatBox label="Negative Marking" value={`-${data.negativeMarks} Marks`} />
+                </>
+              )}
             </View>
 
             <Text style={styles.sectionTitle}>Important Instructions:</Text>
-            {INSTRUCTIONS.map((line, idx) => (
+            {(data.format === 'pdf' ? PDF_INSTRUCTIONS : INSTRUCTIONS).map((line, idx) => (
               <View style={styles.instructionRow} key={idx}>
                 <Text style={styles.instructionNumber}>{idx + 1}.</Text>
                 <Text style={styles.instructionText}>{line}</Text>

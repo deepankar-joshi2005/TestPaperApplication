@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ScreenCapture from 'expo-screen-capture';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,6 +37,15 @@ export default function TestResultScreen({ token, attemptId, nav }: Props) {
     })();
   }, [token, attemptId]);
 
+  useEffect(() => {
+    // Your score/result card is fine to screenshot and share — allow capture
+    // only while this screen is open, then restore the app-wide block.
+    ScreenCapture.allowScreenCaptureAsync();
+    return () => {
+      ScreenCapture.preventScreenCaptureAsync();
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <Text style={styles.headerTitle}>Test Completed 🎉</Text>
@@ -52,7 +62,36 @@ export default function TestResultScreen({ token, attemptId, nav }: Props) {
         </View>
       )}
 
-      {result && (
+      {result && result.format === 'pdf' && (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.pdfDoneIconWrap}>
+            <Ionicons name="checkmark" size={44} color="#FFFFFF" />
+          </View>
+          <Text style={styles.pdfDoneTitle}>Test Submitted!</Text>
+          <Text style={styles.pdfDoneDesc}>
+            Your answers have been recorded. View the answer key below to check your paper.
+          </Text>
+
+          <View style={styles.infoBox}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Time Taken</Text>
+              <Text style={styles.infoValue}>{formatTime(result.timeTakenSeconds)}</Text>
+            </View>
+          </View>
+
+          <Pressable
+            style={styles.primaryBtn}
+            onPress={() => nav.push({ name: 'pdfAnswerKey', attemptId })}
+          >
+            <Text style={styles.primaryBtnText}>View Answer Key</Text>
+          </Pressable>
+          <Pressable style={styles.linkBtn} onPress={() => nav.resetToTab('home')}>
+            <Text style={styles.linkBtnText}>Back to Home</Text>
+          </Pressable>
+        </ScrollView>
+      )}
+
+      {result && result.format !== 'pdf' && (
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={[styles.scoreCircle, !result.passed && styles.scoreCircleFail]}>
             <Text style={styles.scorePercent}>{result.scorePercent}%</Text>
@@ -73,6 +112,32 @@ export default function TestResultScreen({ token, attemptId, nav }: Props) {
             <StatCard icon="remove" label="Skipped" value={`${result.skippedCount} Qs`} color={MUTED} />
             <StatCard icon="radio-button-on" label="Accuracy" value={`${result.accuracy}%`} color={NAVY} />
           </View>
+
+          {result.sectionBreakdown.length > 0 && (
+            <View style={styles.sectionBox}>
+              <Text style={styles.sectionBoxTitle}>Section-wise Performance</Text>
+              {result.sectionBreakdown.map((section) => (
+                <View key={section.name} style={styles.sectionRow}>
+                  <View style={styles.sectionLabelRow}>
+                    <Text style={styles.sectionName}>{section.name}</Text>
+                    <Text style={styles.sectionScore}>
+                      {section.correct}/{section.total} Correct
+                    </Text>
+                  </View>
+                  <View style={styles.sectionTrack}>
+                    <View
+                      style={[
+                        styles.sectionFill,
+                        {
+                          width: `${section.total > 0 ? (section.correct / section.total) * 100 : 0}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={styles.infoBox}>
             <View style={styles.infoRow}>
@@ -169,6 +234,28 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
     alignItems: 'center',
   },
+  pdfDoneIconWrap: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: '#2E9E5B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+  },
+  pdfDoneTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: NAVY,
+    marginTop: 18,
+  },
+  pdfDoneDesc: {
+    fontSize: 13,
+    color: MUTED,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 10,
+  },
   scoreCircle: {
     width: 190,
     height: 190,
@@ -247,6 +334,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     marginTop: 2,
+  },
+  sectionBox: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#EDEBE4',
+  },
+  sectionBoxTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: NAVY,
+    marginBottom: 12,
+  },
+  sectionRow: {
+    marginTop: 10,
+  },
+  sectionLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  sectionName: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#1E2937',
+    flexShrink: 1,
+  },
+  sectionScore: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: MUTED,
+  },
+  sectionTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#EEEDE6',
+    overflow: 'hidden',
+  },
+  sectionFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: '#2E9E5B',
   },
   infoBox: {
     width: '100%',
