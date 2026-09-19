@@ -32,6 +32,7 @@ export interface AdminTestDetail {
   questionPdfUrl: string | null;
   answerKeyUrl: string | null;
   answerKeyType: AnswerKeyType | null;
+  isFreeSample: boolean;
 }
 
 export interface CreateTestPayload {
@@ -61,6 +62,7 @@ export interface UpdateTestConfigPayload {
   questionPdfUrl?: string | null;
   answerKeyUrl?: string | null;
   answerKeyType?: AnswerKeyType | null;
+  isFreeSample?: boolean;
 }
 
 export interface AdminTestListItem {

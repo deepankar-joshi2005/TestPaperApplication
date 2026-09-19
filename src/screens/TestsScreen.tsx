@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +26,7 @@ type Props = {
 
 export default function TestsScreen({ token, nav }: Props) {
   const [series, setSeries] = useState<TestSeriesSummary[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -48,16 +51,59 @@ export default function TestsScreen({ token, nav }: Props) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    // This list only shows category-level test series cards, not paid content
+    // — allow screenshots here, then restore the app-wide block when left.
+    ScreenCapture.allowScreenCaptureAsync();
+    return () => {
+      ScreenCapture.preventScreenCaptureAsync();
+    };
+  }, []);
+
+  const filteredSeries = series?.filter((item) =>
+    item.category.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  );
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Test Series</Text>
-        <NotificationBell
-          token={token}
-          size={22}
-          style={styles.bellBtn}
-          onPress={() => nav.push({ name: 'notifications' })}
-        />
+      {/* Header Banner */}
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerBadge}>EXAM PREPARATION</Text>
+            <Text style={styles.headerTitle}>Test Series</Text>
+          </View>
+          <NotificationBell
+            token={token}
+            iconColor="#FFFFFF"
+            style={styles.headerIconCircle}
+            onPress={() => nav.push({ name: 'notifications' })}
+          />
+        </View>
+        <Text style={styles.headerSubtitle}>
+          Full-length mock tests & practice papers across every exam category
+        </Text>
+        <View style={styles.goldLine} />
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={17} color={MUTED} />
+          <TextInput
+            placeholder="Search test series by exam category..."
+            placeholderTextColor={MUTED}
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {!!searchQuery && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={17} color={MUTED} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -81,11 +127,11 @@ export default function TestsScreen({ token, nav }: Props) {
           </View>
         )}
 
-        {series?.map((item) => (
+        {filteredSeries?.map((item) => (
           <Pressable
             style={styles.card}
             key={item.category}
-            onPress={() => nav.push({ name: 'testList', category: item.category })}
+            onPress={() => nav.push({ name: 'seriesList', category: item.category })}
           >
             <View style={styles.cardTopRow}>
               <View style={styles.cardTitleRow}>
@@ -128,6 +174,10 @@ export default function TestsScreen({ token, nav }: Props) {
             </View>
           </Pressable>
         ))}
+
+        {series && filteredSeries?.length === 0 && (
+          <Text style={styles.emptyText}>No test series match "{searchQuery}".</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -138,27 +188,76 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F4EF',
   },
+  header: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 12,
+  },
+  headerBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: GOLD,
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    color: NAVY,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  bellBtn: {
-    width: 36,
-    height: 36,
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#D1D5DB',
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  headerIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  goldLine: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: GOLD,
+  },
+  searchWrap: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDEBE4',
+  },
+  searchBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F5F4EF',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: NAVY,
+    padding: 0,
   },
   scrollContent: {
     paddingHorizontal: 18,
+    paddingTop: 14,
     paddingBottom: 24,
     gap: 14,
   },
@@ -259,5 +358,10 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
     backgroundColor: GOLD,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: MUTED,
+    marginTop: 30,
   },
 });

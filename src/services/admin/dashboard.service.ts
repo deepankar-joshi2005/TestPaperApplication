@@ -8,12 +8,16 @@ export interface AdminMetrics {
   totalQuestions: number;
   todaysAttempts: number;
   todaysNewStudents: number;
+  totalRevenue: number;
+  todaysRevenue: number;
+  totalPayingStudents: number;
 }
 
 export interface AdminRecentActivity {
   id: string;
+  type: 'test' | 'series';
   title: string;
-  totalQuestions: number;
+  meta: string;
   status: 'draft' | 'published';
 }
 

@@ -34,6 +34,7 @@ export default function AdminAddNoteScreen({ token, subjectId, noteId, nav }: Pr
   const [description, setDescription] = useState('');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
+  const [isFreePreview, setIsFreePreview] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!noteId);
@@ -47,6 +48,7 @@ export default function AdminAddNoteScreen({ token, subjectId, noteId, nav }: Pr
         setDescription(detail.description);
         setPdfUrl(detail.pdfUrl);
         setIsActive(detail.isActive);
+        setIsFreePreview(detail.isFreePreview);
       } catch (err) {
         Alert.alert('Failed to load chapter', err instanceof Error ? err.message : '');
       } finally {
@@ -89,9 +91,22 @@ export default function AdminAddNoteScreen({ token, subjectId, noteId, nav }: Pr
     setSaving(true);
     try {
       if (noteId) {
-        await updateNote(token, noteId, { title: title.trim(), description, pdfUrl, isActive });
+        await updateNote(token, noteId, {
+          title: title.trim(),
+          description,
+          pdfUrl,
+          isActive,
+          isFreePreview,
+        });
       } else {
-        await createNote(token, { subject: subjectId, title: title.trim(), description, pdfUrl, isActive });
+        await createNote(token, {
+          subject: subjectId,
+          title: title.trim(),
+          description,
+          pdfUrl,
+          isActive,
+          isFreePreview,
+        });
       }
       nav.pop();
     } catch (err) {
@@ -147,6 +162,15 @@ export default function AdminAddNoteScreen({ token, subjectId, noteId, nav }: Pr
               description="Hide this chapter without deleting it"
               value={isActive}
               onChange={setIsActive}
+            />
+          </View>
+
+          <View style={styles.toggleWrap}>
+            <ToggleRow
+              label="Free Preview Chapter"
+              description="Let students read this chapter even if the subject is paid and locked"
+              value={isFreePreview}
+              onChange={setIsFreePreview}
             />
           </View>
 

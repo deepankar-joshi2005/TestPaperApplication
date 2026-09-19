@@ -2,13 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 import { Nav } from '../navigation/types';
-import {
-  getProfile,
-  Language,
-  LANGUAGES,
-  updateLanguage,
-} from '../services/profile.service';
+import { getProfile, Language, LANGUAGES, updateLanguage } from '../services/profile.service';
 import { ERROR, GOLD, MUTED, NAVY } from '../theme/colors';
 
 type Props = {
@@ -25,7 +21,8 @@ const NATIVE_NAMES: Record<Language, string> = {
 };
 
 export default function LanguagePreferenceScreen({ token, nav }: Props) {
-  const [selected, setSelected] = useState<Language | null>(null);
+  const { language, setLanguage, t } = useLanguage();
+  const [selected, setSelected] = useState<Language>(language);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -34,25 +31,30 @@ export default function LanguagePreferenceScreen({ token, nav }: Props) {
     (async () => {
       try {
         const profile = await getProfile(token);
-        setSelected(profile.preferredLanguage);
+        if (profile.preferredLanguage) {
+          setSelected(profile.preferredLanguage);
+          setLanguage(profile.preferredLanguage);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load preference.');
       } finally {
         setLoading(false);
       }
     })();
-  }, [token]);
+  }, [token, setLanguage]);
 
   const handleSelect = async (lang: Language) => {
     if (lang === selected) return;
     const previous = selected;
     setSelected(lang);
+    setLanguage(lang);
     setSaving(true);
     setError('');
     try {
       await updateLanguage(token, lang);
     } catch (err) {
       setSelected(previous);
+      setLanguage(previous);
       setError(err instanceof Error ? err.message : 'Failed to save language.');
     } finally {
       setSaving(false);
@@ -65,7 +67,7 @@ export default function LanguagePreferenceScreen({ token, nav }: Props) {
         <Pressable style={styles.iconBtn} onPress={nav.pop} hitSlop={8}>
           <Ionicons name="chevron-back" size={22} color={NAVY} />
         </Pressable>
-        <Text style={styles.headerTitle}>Language Preferences</Text>
+        <Text style={styles.headerTitle}>{t('language_pref_title', 'Language Preferences')}</Text>
         <View style={styles.iconBtn} />
       </View>
 
@@ -76,8 +78,7 @@ export default function LanguagePreferenceScreen({ token, nav }: Props) {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={styles.subtitle}>
-            Choose the language you'd like to use across the app. Your preference is saved to
-            your account.
+            {t('language_pref_subtitle', "Choose the language you'd like to use across the app.")}
           </Text>
 
           {!!error && <Text style={styles.errorText}>{error}</Text>}
@@ -100,11 +101,6 @@ export default function LanguagePreferenceScreen({ token, nav }: Props) {
           })}
 
           {saving && <ActivityIndicator color={NAVY} size="small" style={{ marginTop: 10 }} />}
-
-          <Text style={styles.note}>
-            Note: only your saved preference is stored right now — full in-app translation is
-            coming soon.
-          </Text>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -179,11 +175,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: MUTED,
     marginTop: 2,
-  },
-  note: {
-    fontSize: 11,
-    color: MUTED,
-    marginTop: 12,
-    lineHeight: 16,
   },
 });

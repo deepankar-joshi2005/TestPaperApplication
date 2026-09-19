@@ -12,6 +12,11 @@ export interface NotesSubjectItem {
   name: string;
   description: string;
   noteCount: number;
+  freePreviewCount: number;
+  accessType: 'free' | 'paid';
+  price: number;
+  isLocked: boolean;
+  isPurchased: boolean;
 }
 
 export interface NotesSubjectListResponse {
@@ -24,10 +29,12 @@ export interface NoteItem {
   title: string;
   description: string;
   pdfUrl: string | null;
+  isFreePreview: boolean;
+  isLocked: boolean;
 }
 
 export interface NotesBySubjectResponse {
-  subject: { id: string; name: string };
+  subject: { id: string; name: string; accessType: 'free' | 'paid'; price: number; isLocked: boolean };
   category: string;
   notes: NoteItem[];
 }

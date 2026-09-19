@@ -1,8 +1,11 @@
-export type TabKey = 'home' | 'tests' | 'notes' | 'results' | 'profile';
+export type TabKey = 'home' | 'tests' | 'affairs' | 'notes' | 'results' | 'profile';
+
+export type PurchasableItemType = 'series' | 'notesSubject';
 
 export type Route =
   | { name: 'tab'; tab: TabKey }
-  | { name: 'testList'; category: string }
+  | { name: 'seriesList'; category: string }
+  | { name: 'testList'; seriesId: string }
   | { name: 'testInstructions'; testId: string }
   | { name: 'testTaking'; attemptId: string; testId: string }
   | { name: 'pdfTestTaking'; attemptId: string; testId: string }
@@ -13,6 +16,14 @@ export type Route =
   | { name: 'notesSubjectList'; category: string }
   | { name: 'noteList'; subjectId: string; subjectName: string }
   | { name: 'notePdfView'; title: string; pdfUrl: string }
+  | { name: 'affairPdfView'; title: string; pdfUrl: string }
+  | {
+      name: 'paymentCheckout';
+      itemType: PurchasableItemType;
+      itemId: string;
+      itemTitle: string;
+      price: number;
+    }
   | { name: 'editProfile' }
   | { name: 'notifications' }
   | { name: 'language' }
@@ -29,6 +40,7 @@ export const routeTab = (route: Route): TabKey | null => {
   switch (route.name) {
     case 'tab':
       return route.tab;
+    case 'seriesList':
     case 'testList':
       return 'tests';
     case 'notesSubjectList':

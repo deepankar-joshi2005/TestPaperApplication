@@ -30,6 +30,7 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
   const [customAttempts, setCustomAttempts] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [isFreeSample, setIsFreeSample] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -46,6 +47,7 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
         setNegativeMarks(String(test.negativeMarks ?? 0.25));
         setStartDate(test.startDate ? test.startDate.slice(0, 10) : '');
         setEndDate(test.endDate ? test.endDate.slice(0, 10) : '');
+        setIsFreeSample(test.isFreeSample);
         if (test.maxAttempts === 0) setAttemptsMode('unlimited');
         else if (test.maxAttempts === 1) setAttemptsMode('1');
         else {
@@ -71,6 +73,7 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
         maxAttempts,
         startDate: startDate || null,
         endDate: endDate || null,
+        isFreeSample,
         ...(format === 'mcq'
           ? {
               totalQuestions: totalQuestions ? Number(totalQuestions) : 0,
@@ -219,6 +222,15 @@ export default function AdminCreateTestStep2Screen({ token, testId, nav }: Props
                 onChangeText={setEndDate}
               />
             </View>
+          </View>
+
+          <View style={{ marginTop: 10, marginBottom: 4 }}>
+            <ToggleRow
+              label="Free Sample Test"
+              description="Let students attempt this test even if the series is paid and locked"
+              value={isFreeSample}
+              onChange={setIsFreeSample}
+            />
           </View>
 
           <PrimaryButton label="SAVE & CONTINUE" onPress={handleSave} loading={saving || loading} />

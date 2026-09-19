@@ -93,6 +93,12 @@ export default function AdminHomeScreen({ user, token, nav }: Props) {
       icon: 'document-text-outline',
       onPress: () => nav.push({ name: 'notesCategoryList' }),
     },
+    {
+      key: 'payments',
+      label: 'Payments & Revenue',
+      icon: 'cash-outline',
+      onPress: () => nav.push({ name: 'payments' }),
+    },
   ];
 
   const initials = user.name
@@ -137,6 +143,13 @@ export default function AdminHomeScreen({ user, token, nav }: Props) {
 
         {data && (
           <>
+            <Text style={styles.sectionTitle}>Revenue</Text>
+            <View style={styles.statsGrid}>
+              <StatTile label="Total Revenue" value={`₹${data.metrics.totalRevenue}`} width="third" />
+              <StatTile label="Today's Revenue" value={`₹${data.metrics.todaysRevenue}`} width="third" />
+              <StatTile label="Paying Students" value={data.metrics.totalPayingStudents} width="third" />
+            </View>
+
             <Text style={styles.sectionTitle}>Key Metrics</Text>
             <View style={styles.statsGrid}>
               <StatTile label="Total Students" value={data.metrics.totalStudents} />
@@ -161,17 +174,23 @@ export default function AdminHomeScreen({ user, token, nav }: Props) {
 
             <Text style={styles.sectionTitle}>Recent Activity</Text>
             {data.recentActivity.length === 0 && (
-              <Text style={styles.emptyText}>No tests created yet.</Text>
+              <Text style={styles.emptyText}>No tests or series created yet.</Text>
             )}
             {data.recentActivity.map((item) => (
               <Pressable
-                key={item.id}
+                key={`${item.type}-${item.id}`}
                 style={styles.activityCard}
-                onPress={() => nav.push({ name: 'manageQuestions', testId: item.id })}
+                onPress={() =>
+                  item.type === 'test'
+                    ? nav.push({ name: 'manageQuestions', testId: item.id })
+                    : nav.push({ name: 'seriesTests', seriesId: item.id })
+                }
               >
                 <View style={styles.activityTextWrap}>
                   <Text style={styles.activityTitle}>{item.title}</Text>
-                  <Text style={styles.activitySubtext}>{item.totalQuestions} Questions</Text>
+                  <Text style={styles.activitySubtext}>
+                    {item.type === 'series' ? `Series · ${item.meta}` : item.meta}
+                  </Text>
                 </View>
                 <View
                   style={[

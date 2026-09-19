@@ -16,6 +16,7 @@ import AdminSeriesListScreen from './AdminSeriesListScreen';
 import AdminCreateSeriesStep1Screen from './AdminCreateSeriesStep1Screen';
 import AdminCreateSeriesStep2Screen from './AdminCreateSeriesStep2Screen';
 import AdminSeriesPreviewScreen from './AdminSeriesPreviewScreen';
+import AdminSeriesPublishSuccessScreen from './AdminSeriesPublishSuccessScreen';
 import AdminSeriesTestsScreen from './AdminSeriesTestsScreen';
 import AdminCreateTestStep1Screen from './AdminCreateTestStep1Screen';
 import AdminCreateTestStep2Screen from './AdminCreateTestStep2Screen';
@@ -34,6 +35,10 @@ import AdminNotesSubjectsScreen from './AdminNotesSubjectsScreen';
 import AdminAddSubjectScreen from './AdminAddSubjectScreen';
 import AdminNotesListScreen from './AdminNotesListScreen';
 import AdminAddNoteScreen from './AdminAddNoteScreen';
+import AdminAffairsScreen from './AdminAffairsScreen';
+import AdminAddAffairScreen from './AdminAddAffairScreen';
+import AdminPaymentsScreen from './AdminPaymentsScreen';
+import NotePdfViewScreen from '../NotePdfViewScreen';
 
 type Props = {
   user: AuthUser;
@@ -64,6 +69,9 @@ export default function AdminApp({ user, token, onLogout }: Props) {
         {current.name === 'tab' && current.tab === 'tests' && (
           <AdminCategoriesScreen token={token} nav={nav} />
         )}
+        {current.name === 'tab' && current.tab === 'affairs' && (
+          <AdminAffairsScreen token={token} nav={nav} />
+        )}
         {current.name === 'tab' && current.tab === 'students' && (
           <AdminStudentsScreen token={token} nav={nav} />
         )}
@@ -71,7 +79,7 @@ export default function AdminApp({ user, token, onLogout }: Props) {
           <AdminResultsScreen token={token} nav={nav} />
         )}
         {current.name === 'tab' && current.tab === 'more' && (
-          <AdminMoreScreen user={user} onLogout={onLogout} />
+          <AdminMoreScreen user={user} nav={nav} onLogout={onLogout} />
         )}
 
         {current.name === 'categories' && <AdminCategoriesScreen token={token} nav={nav} />}
@@ -107,6 +115,9 @@ export default function AdminApp({ user, token, onLogout }: Props) {
         )}
         {current.name === 'seriesPreview' && (
           <AdminSeriesPreviewScreen token={token} seriesId={current.seriesId} nav={nav} />
+        )}
+        {current.name === 'seriesPublishSuccess' && (
+          <AdminSeriesPublishSuccessScreen token={token} seriesId={current.seriesId} nav={nav} />
         )}
         {current.name === 'seriesTests' && (
           <AdminSeriesTestsScreen token={token} seriesId={current.seriesId} nav={nav} />
@@ -192,6 +203,23 @@ export default function AdminApp({ user, token, onLogout }: Props) {
             subjectId={current.subjectId}
             noteId={current.noteId}
             nav={nav}
+          />
+        )}
+        {current.name === 'adminAddAffair' && (
+          <AdminAddAffairScreen token={token} nav={nav} />
+        )}
+        {current.name === 'payments' && <AdminPaymentsScreen token={token} nav={nav} />}
+        {current.name === 'adminAffairPdfView' && (
+          <NotePdfViewScreen
+            token={token}
+            title={current.title}
+            pdfUrl={current.pdfUrl}
+            nav={{
+              push: () => {},
+              pop: nav.pop,
+              replace: () => {},
+              resetToTab: () => {},
+            }}
           />
         )}
       </View>

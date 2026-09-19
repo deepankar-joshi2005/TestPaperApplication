@@ -1,5 +1,5 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { NAVY } from '../theme/colors';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { GOLD, NAVY } from '../theme/colors';
 
 type Props = {
   label: string;
@@ -15,7 +15,13 @@ export default function PrimaryButton({ label, onPress, loading, disabled }: Pro
       onPress={onPress}
       disabled={disabled || loading}
     >
-      {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.text}>{label}</Text>}
+      {/* Gold top border accent like landing page button */}
+      <View style={styles.goldAccent} />
+      {loading ? (
+        <ActivityIndicator color="#FFFFFF" />
+      ) : (
+        <Text style={styles.text}>{label}</Text>
+      )}
     </Pressable>
   );
 }
@@ -28,6 +34,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 6,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: GOLD,
+  },
+  goldAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: GOLD,
+    opacity: 0.6,
   },
   btnDisabled: {
     opacity: 0.6,
@@ -36,6 +54,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 15,
-    letterSpacing: 1.2,
+    letterSpacing: 1.4,
   },
 });

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 import { Nav, Route } from '../navigation/types';
 import { getProfile, ProfileData } from '../services/profile.service';
 import { ERROR, MUTED, NAVY } from '../theme/colors';
@@ -20,17 +21,30 @@ const getInitials = (name: string): string =>
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-const MENU_ITEMS: { icon: keyof typeof Ionicons.glyphMap; label: string; route: Route }[] = [
-  { icon: 'person-outline', label: 'Edit Profile', route: { name: 'editProfile' } },
-  { icon: 'notifications-outline', label: 'Notifications', route: { name: 'notifications' } },
-  { icon: 'language-outline', label: 'Language Preferences', route: { name: 'language' } },
-  { icon: 'help-circle-outline', label: 'Help & Support', route: { name: 'help' } },
-];
-
 export default function ProfileScreen({ token, nav, onLogout }: Props) {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const MENU_ITEMS: { icon: keyof typeof Ionicons.glyphMap; label: string; route: Route }[] = [
+    { icon: 'person-outline', label: t('edit_profile', 'Edit Profile'), route: { name: 'editProfile' } },
+    {
+      icon: 'notifications-outline',
+      label: t('notifications_title', 'Notifications'),
+      route: { name: 'notifications' },
+    },
+    {
+      icon: 'language-outline',
+      label: t('language_preferences', 'Language Preferences'),
+      route: { name: 'language' },
+    },
+    {
+      icon: 'help-circle-outline',
+      label: t('help_support', 'Help & Support'),
+      route: { name: 'help' },
+    },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -48,7 +62,7 @@ export default function ProfileScreen({ token, nav, onLogout }: Props) {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>My Profile</Text>
+        <Text style={styles.headerTitle}>{t('student_profile', 'My Profile')}</Text>
         <Pressable
           style={styles.iconBtn}
           hitSlop={8}
@@ -84,7 +98,7 @@ export default function ProfileScreen({ token, nav, onLogout }: Props) {
           </View>
 
           <View style={styles.statsGrid}>
-            <StatCard label="Tests Attempted" value={String(profile.testsAttempted)} />
+            <StatCard label={t('tests_attempted', 'Tests Attempted')} value={String(profile.testsAttempted)} />
             <StatCard label="Avg Accuracy" value={`${profile.avgAccuracy}%`} valueColor={NAVY} />
             <StatCard
               label="Best Rank"
@@ -108,7 +122,7 @@ export default function ProfileScreen({ token, nav, onLogout }: Props) {
           </View>
 
           <Pressable style={styles.logoutBtn} onPress={onLogout}>
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>{t('logout', 'Log Out')}</Text>
           </Pressable>
         </ScrollView>
       )}

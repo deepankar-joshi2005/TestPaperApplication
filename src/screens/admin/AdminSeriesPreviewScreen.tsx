@@ -42,9 +42,7 @@ export default function AdminSeriesPreviewScreen({ token, seriesId, nav }: Props
     setPublishing(true);
     try {
       await publishSeries(token, seriesId);
-      Alert.alert('Published', 'This test series is now live for students.', [
-        { text: 'OK', onPress: () => nav.resetToTab('tests') },
-      ]);
+      nav.replace({ name: 'seriesPublishSuccess', seriesId });
     } catch (err) {
       Alert.alert('Failed to publish', err instanceof Error ? err.message : '');
     } finally {

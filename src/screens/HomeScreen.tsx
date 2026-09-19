@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NotificationBell from '../components/NotificationBell';
+import { useLanguage } from '../context/LanguageContext';
 import { resolveAssetUrl } from '../config/api';
 import { Nav } from '../navigation/types';
 import { getDashboard, DashboardData } from '../services/dashboard.service';
@@ -41,6 +43,7 @@ const getInitials = (name: string): string =>
     .join('');
 
 export default function HomeScreen({ user, token, nav }: Props) {
+  const { t } = useLanguage();
   const [data, setData] = useState<DashboardData | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +70,15 @@ export default function HomeScreen({ user, token, nav }: Props) {
     load(selectedCategory ?? undefined);
   }, [load, selectedCategory]);
 
+  useEffect(() => {
+    // Nothing sensitive here — allow screenshots on the home dashboard,
+    // then restore the app-wide block when the screen is left.
+    ScreenCapture.allowScreenCaptureAsync();
+    return () => {
+      ScreenCapture.preventScreenCaptureAsync();
+    };
+  }, []);
+
   const firstName = user.name.split(' ')[0];
 
   return (
@@ -77,21 +89,26 @@ export default function HomeScreen({ user, token, nav }: Props) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => load(selectedCategory ?? undefined, true)}
-            tintColor={NAVY}
+            tintColor={GOLD}
           />
         }
       >
-        <View style={styles.headerRow}>
+        {/* Navy branded header — linked to landing page */}
+        <View style={styles.navHeader}>
           <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.helloText}>Hello, {firstName} 👋</Text>
+            <Text style={styles.welcomeText}>{t('welcome_back', 'Welcome back,')}</Text>
+            <Text style={styles.helloText}>
+              {t('hello', 'Hello,')} {firstName} 👋
+            </Text>
           </View>
           <View style={styles.headerActions}>
-            <NotificationBell token={token} onPress={() => nav.push({ name: 'notifications' })} />
+            <NotificationBell token={token} iconColor="#FFFFFF" onPress={() => nav.push({ name: 'notifications' })} />
             <Pressable style={styles.avatar} onPress={() => nav.resetToTab('profile')}>
               <Text style={styles.avatarText}>{getInitials(user.name)}</Text>
             </Pressable>
           </View>
+          {/* Gold bottom accent */}
+          <View style={styles.navGoldBar} />
         </View>
 
         <View style={styles.searchBar}>
@@ -115,7 +132,7 @@ export default function HomeScreen({ user, token, nav }: Props) {
         )}
 
         {data && (
-          <>
+          <View style={styles.contentPad}>
             <View style={styles.statsGrid}>
               <StatCard
                 icon={STAT_ICONS.totalTests}
@@ -169,7 +186,7 @@ export default function HomeScreen({ user, token, nav }: Props) {
 
             {data.continueTest && (
               <>
-                <Text style={styles.sectionTitle}>Continue Test</Text>
+                <Text style={styles.sectionTitle}>{t('continue_practicing', 'Continue Test')}</Text>
                 <Pressable
                   style={styles.continueCard}
                   onPress={() =>
@@ -182,7 +199,7 @@ export default function HomeScreen({ user, token, nav }: Props) {
                 >
                   <View style={styles.continueHeaderRow}>
                     <Text style={styles.continueTitle}>{data.continueTest.title}</Text>
-                    <Text style={styles.resumeText}>Resume Test</Text>
+                    <Text style={styles.resumeText}>{t('resume_test', 'Resume Test')}</Text>
                   </View>
                   <View style={styles.continueProgressRow}>
                     <Text style={styles.continueSubtext}>
@@ -200,38 +217,59 @@ export default function HomeScreen({ user, token, nav }: Props) {
               </>
             )}
 
-            <Text style={styles.sectionTitle}>Popular Test Series</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.seriesRow}
+            {/* Current Affairs Spotlight */}
+            <Pressable
+              style={styles.affairsBanner}
+              onPress={() => nav.resetToTab('affairs')}
             >
-              {data.popularSeries.map((series) => (
-                <Pressable
-                  style={styles.seriesCard}
-                  key={series.id}
-                  onPress={() => nav.push({ name: 'testList', category: series.category })}
-                >
-                  {series.bannerImage && (
-                    <Image
-                      source={{ uri: resolveAssetUrl(series.bannerImage) }}
-                      style={styles.seriesBanner}
-                      resizeMode="cover"
-                    />
-                  )}
-                  <Text style={styles.seriesTitle} numberOfLines={2}>
-                    {series.title}
-                  </Text>
-                  <Text style={styles.seriesSubtext}>
-                    {series.totalPapers} {series.unitLabel}
-                  </Text>
-                  <Text style={styles.availableText}>
-                    {series.isAvailable ? 'Available Now' : 'Coming Soon'}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </>
+              <View style={styles.affairsBannerLeft}>
+                <View style={styles.affairsBadgeRow}>
+                  <Text style={styles.affairsNewBadge}>CURRENT AFFAIRS</Text>
+                  <Text style={styles.affairsSubBadge}>National & Uttarakhand</Text>
+                </View>
+                <Text style={styles.affairsBannerTitle}>Current Affairs & GK Digests</Text>
+                <Text style={styles.affairsBannerSub}>Weekly, Monthly & Yearly PDF Digests</Text>
+              </View>
+              <View style={styles.affairsArrowBtn}>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+              </View>
+            </Pressable>
+
+            <Text style={styles.sectionTitle}>Popular Test Series</Text>
+          </View>
+        )}
+
+        {data && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.seriesRow}
+          >
+            {data.popularSeries.map((series) => (
+              <Pressable
+                style={styles.seriesCard}
+                key={series.id}
+                onPress={() => nav.push({ name: 'testList', seriesId: series.id })}
+              >
+                {series.bannerImage && (
+                  <Image
+                    source={{ uri: resolveAssetUrl(series.bannerImage) }}
+                    style={styles.seriesBanner}
+                    resizeMode="cover"
+                  />
+                )}
+                <Text style={styles.seriesTitle} numberOfLines={2}>
+                  {series.title}
+                </Text>
+                <Text style={styles.seriesSubtext}>
+                  {series.totalPapers} {series.unitLabel}
+                </Text>
+                <Text style={styles.availableText}>
+                  {series.isAvailable ? 'Available Now' : 'Coming Soon'}
+                </Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -261,16 +299,33 @@ function StatCard({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#F5F4EF',
+    backgroundColor: '#EEF2F8',
   },
   scrollContent: {
-    padding: 18,
     paddingBottom: 30,
   },
-  headerRow: {
+  contentPad: {
+    paddingHorizontal: 18,
+    paddingTop: 14,
+  },
+  /* Navy branded header */
+  navHeader: {
+    backgroundColor: NAVY,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 16,
+    overflow: 'hidden',
+  },
+  navGoldBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: GOLD,
   },
   headerActions: {
     flexDirection: 'row',
@@ -279,12 +334,12 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 13,
-    color: MUTED,
+    color: 'rgba(255,255,255,0.7)',
   },
   helloText: {
     fontSize: 19,
     fontWeight: '800',
-    color: NAVY,
+    color: '#FFFFFF',
     marginTop: 2,
   },
   avatar: {
@@ -292,15 +347,15 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     borderWidth: 1.5,
-    borderColor: NAVY,
+    borderColor: GOLD,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   avatarText: {
     fontSize: 13,
     fontWeight: '800',
-    color: NAVY,
+    color: '#FFFFFF',
   },
   searchBar: {
     flexDirection: 'row',
@@ -309,10 +364,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 14,
     height: 46,
-    marginTop: 18,
+    marginTop: 14,
+    marginHorizontal: 18,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#EDEBE4',
+    borderColor: '#DDE3EE',
+    shadowColor: NAVY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   searchPlaceholder: {
     fontSize: 13,
@@ -471,7 +532,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    paddingRight: 10,
+    paddingLeft: 18,
+    paddingRight: 18,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   seriesCard: {
     width: 168,
@@ -505,5 +569,64 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2E9E5B',
     marginTop: 8,
+  },
+  affairsBanner: {
+    backgroundColor: '#16315C',
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#244579',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  affairsBannerLeft: {
+    flex: 1,
+    gap: 4,
+  },
+  affairsBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  affairsNewBadge: {
+    backgroundColor: GOLD,
+    color: NAVY,
+    fontSize: 9.5,
+    fontWeight: '900',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    letterSpacing: 0.5,
+  },
+  affairsSubBadge: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  affairsBannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  affairsBannerSub: {
+    color: '#94A3B8',
+    fontSize: 11.5,
+  },
+  affairsArrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
   },
 });

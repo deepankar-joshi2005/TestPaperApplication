@@ -133,7 +133,7 @@ export default function PdfTestTakingScreen({ token, testId, nav }: Props) {
             mixedContentMode="always"
             javaScriptEnabled
             domStorageEnabled
-            source={{ html: buildPdfViewerHtml(pdfUrl) }}
+            source={{ html: buildPdfViewerHtml(pdfUrl, token) }}
             onError={(e) =>
               setWebViewError(`Could not open the PDF viewer: ${e.nativeEvent.description}`)
             }

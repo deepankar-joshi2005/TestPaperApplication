@@ -8,27 +8,33 @@ type Props = {
   token: string;
   onPress: () => void;
   size?: number;
+  iconColor?: string;
   style?: StyleProp<ViewStyle>;
 };
 
-export default function NotificationBell({ token, onPress, size = 22, style }: Props) {
+export default function NotificationBell({ token, onPress, size = 22, iconColor = NAVY, style }: Props) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    getNotifications(token)
-      .then((result) => {
-        if (!cancelled) setUnreadCount(result.unreadCount);
-      })
-      .catch(() => {});
+    const fetchUnread = () => {
+      getNotifications(token)
+        .then((result) => {
+          if (!cancelled) setUnreadCount(result.unreadCount);
+        })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [token]);
 
   return (
     <Pressable style={[styles.wrap, style]} onPress={onPress} hitSlop={8}>
-      <Ionicons name="notifications-outline" size={size} color={NAVY} />
+      <Ionicons name="notifications-outline" size={size} color={iconColor} />
       {unreadCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>

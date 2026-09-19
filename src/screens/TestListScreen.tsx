@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Pressable,
   RefreshControl,
@@ -14,12 +16,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { resolveAssetUrl } from '../config/api';
 import { Nav } from '../navigation/types';
 import { startAttempt } from '../services/attempts.service';
-import { getTestsByCategory, TestListItem } from '../services/tests.service';
+import { getTestsBySeries, TestListItem } from '../services/tests.service';
 import { ERROR, GOLD, MUTED, NAVY } from '../theme/colors';
+
+const formatDate = (iso: string | null): string =>
+  iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
 
 type Props = {
   token: string;
-  category: string;
+  seriesId: string;
   nav: Nav;
 };
 
@@ -33,9 +38,13 @@ const filterMatches = (filter: Filter, status: TestListItem['status']): boolean 
   return status === 'completed';
 };
 
-export default function TestListScreen({ token, category, nav }: Props) {
+export default function TestListScreen({ token, seriesId, nav }: Props) {
   const [seriesTitle, setSeriesTitle] = useState('');
   const [bannerImage, setBannerImage] = useState<string | null>(null);
+  const [accessType, setAccessType] = useState<'free' | 'paid'>('free');
+  const [price, setPrice] = useState(0);
+  const [lockReason, setLockReason] = useState<TestListItem['lockReason']>(null);
+  const [seriesStartDate, setSeriesStartDate] = useState<string | null>(null);
   const [tests, setTests] = useState<TestListItem[] | null>(null);
   const [filter, setFilter] = useState<Filter>('All');
   const [loading, setLoading] = useState(true);
@@ -48,9 +57,13 @@ export default function TestListScreen({ token, category, nav }: Props) {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError('');
       try {
-        const result = await getTestsByCategory(token, category);
+        const result = await getTestsBySeries(token, seriesId);
         setSeriesTitle(result.seriesTitle);
         setBannerImage(result.bannerImage);
+        setAccessType(result.accessType);
+        setPrice(result.price);
+        setLockReason(result.lockReason);
+        setSeriesStartDate(result.startDate);
         setTests(result.tests);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load tests.');
@@ -58,14 +71,45 @@ export default function TestListScreen({ token, category, nav }: Props) {
         isRefresh ? setRefreshing(false) : setLoading(false);
       }
     },
-    [token, category]
+    [token, seriesId]
   );
 
   useEffect(() => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    // This list only shows test titles/status, no exam content — allow
+    // screenshots here, then restore the app-wide block when the screen is left.
+    ScreenCapture.allowScreenCaptureAsync();
+    return () => {
+      ScreenCapture.preventScreenCaptureAsync();
+    };
+  }, []);
+
+  const goToCheckout = () => {
+    nav.push({
+      name: 'paymentCheckout',
+      itemType: 'series',
+      itemId: seriesId,
+      itemTitle: seriesTitle,
+      price,
+    });
+  };
+
   const handleStartOrResume = async (test: TestListItem) => {
+    if (test.lockReason === 'upcoming') {
+      Alert.alert('Not available yet', `This test will open on ${formatDate(test.startDate)}.`);
+      return;
+    }
+    if (test.lockReason === 'expired') {
+      Alert.alert('Window closed', "This test's availability window has ended.");
+      return;
+    }
+    if (test.isLocked) {
+      goToCheckout();
+      return;
+    }
     const routeName = test.format === 'pdf' ? 'pdfTestTaking' : 'testTaking';
 
     if (test.status === 'in-progress' && test.attemptId) {
@@ -96,7 +140,7 @@ export default function TestListScreen({ token, category, nav }: Props) {
           <Ionicons name="chevron-back" size={22} color={NAVY} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          {seriesTitle || `${category} Mock Tests`}
+          {seriesTitle || 'Test Series'}
         </Text>
         <Pressable
           style={styles.iconBtn}
@@ -113,6 +157,49 @@ export default function TestListScreen({ token, category, nav }: Props) {
           style={styles.banner}
           resizeMode="cover"
         />
+      )}
+
+      {lockReason === 'payment' && (
+        <View style={styles.paywallCard}>
+          <View style={styles.paywallIconWrap}>
+            <Ionicons name="lock-closed" size={18} color="#8A5A00" />
+          </View>
+          <View style={styles.paywallTextWrap}>
+            <Text style={styles.paywallTitle}>This series is locked</Text>
+            <Text style={styles.paywallDesc}>
+              Unlock all mock tests in this series for a one-time payment.
+            </Text>
+          </View>
+          <Pressable style={styles.paywallBtn} onPress={goToCheckout}>
+            <Text style={styles.paywallBtnText}>Unlock ₹{price}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {lockReason === 'upcoming' && (
+        <View style={[styles.paywallCard, styles.scheduleCard]}>
+          <View style={styles.paywallIconWrap}>
+            <Ionicons name="time-outline" size={18} color="#B4790C" />
+          </View>
+          <View style={styles.paywallTextWrap}>
+            <Text style={styles.paywallTitle}>Not open yet</Text>
+            <Text style={styles.paywallDesc}>
+              This series will open on {formatDate(seriesStartDate)}.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {lockReason === 'expired' && (
+        <View style={[styles.paywallCard, styles.scheduleCard]}>
+          <View style={styles.paywallIconWrap}>
+            <Ionicons name="close-circle-outline" size={18} color={MUTED} />
+          </View>
+          <View style={styles.paywallTextWrap}>
+            <Text style={styles.paywallTitle}>Availability window ended</Text>
+            <Text style={styles.paywallDesc}>This series is no longer open for attempts.</Text>
+          </View>
+        </View>
       )}
 
       <ScrollView
@@ -155,7 +242,11 @@ export default function TestListScreen({ token, category, nav }: Props) {
           <View style={styles.card} key={test.id}>
             <View style={styles.cardTopRow}>
               <Text style={styles.cardTitle}>{test.title}</Text>
-              <StatusBadge status={test.status} />
+              {test.lockReason ? (
+                <LockBadge reason={test.lockReason} startDate={test.startDate} />
+              ) : (
+                <StatusBadge status={test.status} isFreeSample={test.isFreeSample} />
+              )}
             </View>
             <Text style={styles.metaText}>
               {test.totalQuestions} Questions • {test.durationMinutes} Minutes •{' '}
@@ -166,7 +257,13 @@ export default function TestListScreen({ token, category, nav }: Props) {
               <Text style={styles.difficultyText}>
                 Difficulty: <Text style={styles.difficultyValue}>{test.difficulty}</Text>
               </Text>
-              {test.status === 'completed' ? (
+              {test.isLocked ? (
+                <Pressable style={styles.primaryBtn} onPress={() => handleStartOrResume(test)}>
+                  <Text style={styles.primaryBtnText}>
+                    {test.lockReason === 'payment' ? 'Unlock' : 'View Details'}
+                  </Text>
+                </Pressable>
+              ) : test.status === 'completed' ? (
                 <View style={styles.completedActions}>
                   <Text style={styles.scoreText}>
                     Score: {test.score}/{test.totalMarks}
@@ -208,12 +305,55 @@ export default function TestListScreen({ token, category, nav }: Props) {
             </View>
           </View>
         ))}
+
+        {tests && filteredTests.length === 0 && (
+          <Text style={styles.emptyText}>No tests found for this filter.</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function StatusBadge({ status }: { status: TestListItem['status'] }) {
+function LockBadge({
+  reason,
+  startDate,
+}: {
+  reason: 'payment' | 'upcoming' | 'expired';
+  startDate: string | null;
+}) {
+  if (reason === 'upcoming') {
+    return (
+      <View style={[styles.badge, styles.badgeUpcoming]}>
+        <Ionicons name="time-outline" size={10} color="#B4790C" />
+        <Text style={[styles.badgeText, styles.badgeTextUpcoming]}>
+          {startDate ? `From ${formatDate(startDate)}` : 'Upcoming'}
+        </Text>
+      </View>
+    );
+  }
+  if (reason === 'expired') {
+    return (
+      <View style={[styles.badge, styles.badgeExpired]}>
+        <Ionicons name="close-circle-outline" size={10} color={MUTED} />
+        <Text style={[styles.badgeText, styles.badgeTextExpired]}>Expired</Text>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.badge, styles.badgeLocked]}>
+      <Ionicons name="lock-closed" size={10} color="#8A5A00" />
+      <Text style={[styles.badgeText, styles.badgeTextLocked]}>Locked</Text>
+    </View>
+  );
+}
+
+function StatusBadge({
+  status,
+  isFreeSample,
+}: {
+  status: TestListItem['status'];
+  isFreeSample: boolean;
+}) {
   if (status === 'completed') {
     return (
       <View style={[styles.badge, styles.badgeCompleted]}>
@@ -225,6 +365,13 @@ function StatusBadge({ status }: { status: TestListItem['status'] }) {
     return (
       <View style={[styles.badge, styles.badgeProgress]}>
         <Text style={[styles.badgeText, styles.badgeTextProgress]}>In Progress</Text>
+      </View>
+    );
+  }
+  if (isFreeSample) {
+    return (
+      <View style={[styles.badge, styles.badgeFree]}>
+        <Text style={[styles.badgeText, styles.badgeTextFree]}>Free Sample</Text>
       </View>
     );
   }
@@ -267,6 +414,37 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: '#EEF1F7',
   },
+  paywallCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 18,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#FDF1DC',
+    borderWidth: 1,
+    borderColor: '#F0DDB0',
+  },
+  paywallIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paywallTextWrap: { flex: 1 },
+  paywallTitle: { fontSize: 13.5, fontWeight: '800', color: NAVY },
+  paywallDesc: { fontSize: 11.5, color: MUTED, marginTop: 3, lineHeight: 16 },
+  paywallBtn: {
+    backgroundColor: NAVY,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  paywallBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 12.5 },
+  scheduleCard: { backgroundColor: '#EEF1F7', borderColor: '#D9E0EC' },
   filterScroll: {
     flexGrow: 0,
     flexShrink: 0,
@@ -344,6 +522,9 @@ const styles = StyleSheet.create({
     color: NAVY,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -351,6 +532,10 @@ const styles = StyleSheet.create({
   badgeNew: { backgroundColor: '#FDF1DC' },
   badgeProgress: { backgroundColor: '#E9F0FB' },
   badgeCompleted: { backgroundColor: '#E4F5EA' },
+  badgeFree: { backgroundColor: '#E4F5EA' },
+  badgeLocked: { backgroundColor: '#FDF1DC' },
+  badgeUpcoming: { backgroundColor: '#FDF1DC' },
+  badgeExpired: { backgroundColor: '#EEEDE6' },
   badgeText: {
     fontSize: 10.5,
     fontWeight: '700',
@@ -358,6 +543,10 @@ const styles = StyleSheet.create({
   badgeTextNew: { color: '#B4790C' },
   badgeTextProgress: { color: NAVY },
   badgeTextCompleted: { color: '#2E9E5B' },
+  badgeTextFree: { color: '#2E9E5B' },
+  badgeTextLocked: { color: '#8A5A00' },
+  badgeTextUpcoming: { color: '#B4790C' },
+  badgeTextExpired: { color: MUTED },
   metaText: {
     fontSize: 12,
     color: MUTED,
@@ -433,4 +622,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
   },
+  emptyText: { textAlign: 'center', color: MUTED, marginTop: 30 },
 });

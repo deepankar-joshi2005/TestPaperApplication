@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "test-paper-frontend",
+    "name": "Dehradun Coaching",
     "slug": "test-paper-frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/Download icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dehraduncoaching.app"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FDFBF6",
+        "foregroundImage": "./assets/Download icon.png"
       },
+      "package": "com.dehraduncoaching.app",
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -33,12 +33,13 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FDFBF6",
+          "backgroundColor": "#16315C",
           "image": "./assets/logo.png",
-          "imageWidth": 180,
+          "imageWidth": 220,
           "resizeMode": "contain"
         }
       ]
     ]
   }
 }
+

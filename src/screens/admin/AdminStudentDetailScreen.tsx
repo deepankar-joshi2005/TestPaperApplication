@@ -64,7 +64,27 @@ export default function AdminStudentDetailScreen({ token, studentId, nav }: Prop
             <Text style={styles.infoRow}>Mobile: {detail.mobile}</Text>
             <Text style={styles.infoRow}>Joined: {formatDate(detail.joinedAt)}</Text>
             <Text style={styles.infoRow}>Total Attempts: {detail.attempts.length}</Text>
+            <Text style={styles.infoRow}>
+              Total Spent: ₹{detail.purchases.reduce((sum, p) => sum + p.amount, 0)}
+            </Text>
           </View>
+
+          <Text style={styles.sectionTitle}>Purchases</Text>
+          {detail.purchases.length === 0 && (
+            <Text style={styles.emptyText}>No purchases yet.</Text>
+          )}
+          {detail.purchases.map((p, idx) => (
+            <View key={`${p.itemType}-${idx}`} style={styles.card}>
+              <View style={styles.cardTextWrap}>
+                <Text style={styles.cardTitle}>{p.itemTitle}</Text>
+                <Text style={styles.cardMeta}>
+                  {p.itemType === 'series' ? 'Test Series' : 'Notes Subject'} •{' '}
+                  {formatDate(p.purchasedAt)}
+                </Text>
+              </View>
+              <Text style={styles.score}>₹{p.amount}</Text>
+            </View>
+          ))}
 
           <Text style={styles.sectionTitle}>Attempt History</Text>
           {detail.attempts.length === 0 && (

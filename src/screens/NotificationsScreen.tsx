@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 import { Nav } from '../navigation/types';
 import {
   getNotifications,
@@ -36,6 +37,7 @@ const timeAgo = (iso: string): string => {
 };
 
 export default function NotificationsScreen({ token, nav }: Props) {
+  const { t } = useLanguage();
   const [items, setItems] = useState<NotificationItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,15 +64,107 @@ export default function NotificationsScreen({ token, nav }: Props) {
   }, [load]);
 
   const handleTap = async (item: NotificationItem) => {
-    if (item.isRead) return;
-    setItems((prev) =>
-      prev ? prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n)) : prev
-    );
-    try {
-      await markNotificationRead(token, item.id);
-    } catch {
-      // best-effort; local state already updated
+    if (!item.isRead) {
+      setItems((prev) =>
+        prev ? prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n)) : prev
+      );
+      try {
+        await markNotificationRead(token, item.id);
+      } catch {
+        // best-effort; local state already updated
+      }
     }
+
+    const title = item.title.toLowerCase();
+    const message = item.message.toLowerCase();
+
+    // Result / solution related — route straight to the answer key/solutions
+    // for the attempt this notification is about.
+    if (
+      item.targetScreen === 'solutionReview' ||
+      item.targetScreen === 'pdfAnswerKey' ||
+      item.attemptId ||
+      item.type === 'result' ||
+      title.includes('completed') ||
+      title.includes('submitted') ||
+      message.includes('answer key')
+    ) {
+      if (item.attemptId && item.targetScreen === 'pdfAnswerKey') {
+        nav.push({ name: 'pdfAnswerKey', attemptId: item.attemptId });
+        return;
+      }
+      if (item.attemptId) {
+        nav.push({ name: 'solutionReview', attemptId: item.attemptId });
+        return;
+      }
+      if (item.testId) {
+        nav.push({ name: 'testInstructions', testId: item.testId });
+        return;
+      }
+      nav.resetToTab('results');
+      return;
+    }
+
+    // New test added — route to that test.
+    if (
+      item.targetScreen === 'testInstructions' ||
+      item.testId ||
+      title.includes('test added')
+    ) {
+      if (item.testId) {
+        nav.push({ name: 'testInstructions', testId: item.testId });
+        return;
+      }
+      if (item.category) {
+        nav.push({ name: 'seriesList', category: item.category });
+        return;
+      }
+      nav.resetToTab('tests');
+      return;
+    }
+
+    // New test series added — route to that category's series list.
+    if (item.targetScreen === 'seriesList' || item.category || title.includes('series')) {
+      if (item.category) {
+        nav.push({ name: 'seriesList', category: item.category });
+        return;
+      }
+      nav.resetToTab('tests');
+      return;
+    }
+
+    // New current affairs digest.
+    if (item.targetScreen === 'affairs' || title.includes('current affairs')) {
+      nav.resetToTab('affairs');
+      return;
+    }
+  };
+
+  const getActionLabel = (item: NotificationItem): string | null => {
+    const title = item.title.toLowerCase();
+    const message = item.message.toLowerCase();
+
+    if (item.targetScreen === 'pdfAnswerKey') return 'View Answer Key ›';
+    if (
+      item.targetScreen === 'solutionReview' ||
+      item.attemptId ||
+      item.type === 'result' ||
+      title.includes('completed') ||
+      title.includes('submitted') ||
+      message.includes('answer key')
+    ) {
+      return 'View Solution & Answer Key ›';
+    }
+    if (item.targetScreen === 'testInstructions' || item.testId || title.includes('test added')) {
+      return 'Start Test Now ›';
+    }
+    if (item.targetScreen === 'seriesList' || item.category || title.includes('series')) {
+      return 'View Series ›';
+    }
+    if (item.targetScreen === 'affairs' || title.includes('current affairs')) {
+      return 'View Affairs ›';
+    }
+    return null;
   };
 
   const handleMarkAll = async () => {
@@ -90,10 +184,10 @@ export default function NotificationsScreen({ token, nav }: Props) {
         <Pressable style={styles.iconBtn} onPress={nav.pop} hitSlop={8}>
           <Ionicons name="chevron-back" size={22} color={NAVY} />
         </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{t('notifications_title', 'Notifications')}</Text>
         <Pressable style={styles.iconBtn} onPress={handleMarkAll} hitSlop={8} disabled={!unreadCount}>
           <Text style={[styles.markAllText, !unreadCount && styles.markAllTextDisabled]}>
-            Mark all
+            {t('mark_all_read', 'Mark all')}
           </Text>
         </Pressable>
       </View>
@@ -119,7 +213,7 @@ export default function NotificationsScreen({ token, nav }: Props) {
         {items?.length === 0 && (
           <View style={styles.emptyBox}>
             <Ionicons name="notifications-off-outline" size={30} color={MUTED} />
-            <Text style={styles.emptyText}>No notifications yet.</Text>
+            <Text style={styles.emptyText}>{t('no_notifications', 'No notifications yet.')}</Text>
           </View>
         )}
 
@@ -142,7 +236,12 @@ export default function NotificationsScreen({ token, nav }: Props) {
                 {!item.isRead && <View style={styles.unreadDot} />}
               </View>
               <Text style={styles.cardMessage}>{item.message}</Text>
-              <Text style={styles.cardTime}>{timeAgo(item.createdAt)}</Text>
+              <View style={styles.cardBottomRow}>
+                <Text style={styles.cardTime}>{timeAgo(item.createdAt)}</Text>
+                {!!getActionLabel(item) && (
+                  <Text style={styles.cardAction}>{getActionLabel(item)}</Text>
+                )}
+              </View>
             </View>
           </Pressable>
         ))}
@@ -259,9 +358,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 18,
   },
+  cardBottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
   cardTime: {
     fontSize: 10.5,
     color: MUTED,
-    marginTop: 6,
+  },
+  cardAction: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: NAVY,
   },
 });

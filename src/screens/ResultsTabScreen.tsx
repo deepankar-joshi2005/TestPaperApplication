@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLanguage } from '../context/LanguageContext';
 import { Nav } from '../navigation/types';
 import { getHistory, HistoryItem } from '../services/attempts.service';
 import { getPerformance, PerformanceData } from '../services/performance.service';
@@ -29,6 +30,7 @@ const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export default function ResultsTabScreen({ token, nav }: Props) {
+  const { t } = useLanguage();
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [history, setHistory] = useState<HistoryItem[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function ResultsTabScreen({ token, nav }: Props) {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <Text style={styles.headerTitle}>My Performance</Text>
+      <Text style={styles.headerTitle}>{t('results_performance', 'Results & Performance')}</Text>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -142,7 +144,7 @@ export default function ResultsTabScreen({ token, nav }: Props) {
           </>
         )}
 
-        <Text style={styles.sectionTitle}>Test History</Text>
+        <Text style={styles.sectionTitle}>{t('test_history', 'Test History')}</Text>
         {history?.length === 0 && (
           <Text style={styles.emptyText}>You haven't completed any tests yet.</Text>
         )}
@@ -163,13 +165,17 @@ export default function ResultsTabScreen({ token, nav }: Props) {
               </Text>
             )}
             <View style={styles.historyBottomRow}>
-              {item.format === 'pdf' ? (
-                <Text style={styles.historyMeta}>View your answer key from the result screen</Text>
-              ) : (
-                <Text style={[styles.passedText, !item.passed && styles.failedText]}>
-                  {item.passed ? 'Passed' : 'Not Passed'}
-                </Text>
-              )}
+              <View style={styles.historyBottomLeft}>
+                {item.format === 'pdf' ? (
+                  <Text style={styles.historyMeta} numberOfLines={2}>
+                    View your answer key from the result screen
+                  </Text>
+                ) : (
+                  <Text style={[styles.passedText, !item.passed && styles.failedText]}>
+                    {item.passed ? t('passed', 'Passed') : t('failed', 'Failed')}
+                  </Text>
+                )}
+              </View>
               <Pressable
                 style={styles.viewResultBtn}
                 onPress={() => nav.push({ name: 'testResult', attemptId: item.attemptId })}
@@ -387,6 +393,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 12,
+    gap: 10,
+  },
+  historyBottomLeft: {
+    flex: 1,
   },
   passedText: {
     fontSize: 12.5,

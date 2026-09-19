@@ -9,9 +9,13 @@ export interface AdminSeriesListItem {
   title: string;
   category: string;
   status: SeriesStatus;
+  accessType: AccessType;
+  price: number;
   testCount: number;
   totalQuestions: number;
   studentCount: number;
+  buyerCount: number;
+  revenue: number;
 }
 
 export interface AdminSeriesCounts {
@@ -45,6 +49,8 @@ export interface AdminSeriesDetail {
   endDate: string | null;
   isPublic: boolean;
   status: SeriesStatus;
+  buyerCount: number;
+  revenue: number;
   testCount: number;
   studentCount: number;
 }

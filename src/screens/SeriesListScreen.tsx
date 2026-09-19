@@ -3,6 +3,7 @@ import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,9 +13,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AccessBadge from '../components/AccessBadge';
+import { resolveAssetUrl } from '../config/api';
 import { Nav } from '../navigation/types';
-import { getSubjectsByCategory, NotesSubjectItem } from '../services/notes.service';
+import { getSeriesByCategory, SeriesListItem } from '../services/tests.service';
 import { ERROR, MUTED, NAVY } from '../theme/colors';
+
+const formatDate = (iso: string | null): string =>
+  iso ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
 
 type Props = {
   token: string;
@@ -29,8 +34,8 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'paid', label: 'Paid' },
 ];
 
-export default function NotesSubjectListScreen({ token, category, nav }: Props) {
-  const [subjects, setSubjects] = useState<NotesSubjectItem[] | null>(null);
+export default function SeriesListScreen({ token, category, nav }: Props) {
+  const [series, setSeries] = useState<SeriesListItem[] | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,10 +46,10 @@ export default function NotesSubjectListScreen({ token, category, nav }: Props) 
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError('');
       try {
-        const result = await getSubjectsByCategory(token, category);
-        setSubjects(result.subjects);
+        const result = await getSeriesByCategory(token, category);
+        setSeries(result.series);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load subjects.');
+        setError(err instanceof Error ? err.message : 'Failed to load test series.');
       } finally {
         isRefresh ? setRefreshing(false) : setLoading(false);
       }
@@ -57,16 +62,15 @@ export default function NotesSubjectListScreen({ token, category, nav }: Props) 
   }, [load]);
 
   useEffect(() => {
-    // This list only shows subject titles/prices, not paid content — allow
-    // screenshots here, then restore the app-wide block when the screen is left.
+    // This list only shows titles/prices, not paid content — allow screenshots
+    // here, then restore the app-wide block when the screen is left.
     ScreenCapture.allowScreenCaptureAsync();
     return () => {
       ScreenCapture.preventScreenCaptureAsync();
     };
   }, []);
 
-  const filteredSubjects =
-    subjects?.filter((s) => filter === 'all' || s.accessType === filter) ?? [];
+  const filteredSeries = series?.filter((s) => filter === 'all' || s.accessType === filter) ?? [];
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
@@ -75,7 +79,7 @@ export default function NotesSubjectListScreen({ token, category, nav }: Props) 
           <Ionicons name="chevron-back" size={22} color={NAVY} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
-          {category} Notes
+          {category} Test Series
         </Text>
         <View style={styles.iconBtn} />
       </View>
@@ -104,13 +108,13 @@ export default function NotesSubjectListScreen({ token, category, nav }: Props) 
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={NAVY} />
         }
       >
-        {loading && !subjects && (
+        {loading && !series && (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={NAVY} size="large" />
           </View>
         )}
 
-        {!!error && !subjects && (
+        {!!error && !series && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{error}</Text>
             <Pressable onPress={() => load()}>
@@ -119,45 +123,86 @@ export default function NotesSubjectListScreen({ token, category, nav }: Props) 
           </View>
         )}
 
-        {filteredSubjects.map((subject) => (
+        {filteredSeries.map((item) => (
           <Pressable
-            key={subject.id}
             style={styles.card}
-            onPress={() =>
-              nav.push({ name: 'noteList', subjectId: subject.id, subjectName: subject.name })
-            }
+            key={item.id}
+            onPress={() => nav.push({ name: 'testList', seriesId: item.id })}
           >
+            {!!item.bannerImage?.trim() && (
+              <Image
+                source={{ uri: resolveAssetUrl(item.bannerImage) }}
+                style={styles.banner}
+                resizeMode="cover"
+              />
+            )}
             <View style={styles.cardTopRow}>
-              <Text style={styles.cardTitle}>{subject.name}</Text>
-              <Ionicons name="chevron-forward" size={18} color={NAVY} />
-            </View>
-            {!!subject.description && <Text style={styles.cardDesc}>{subject.description}</Text>}
-            <View style={styles.metaRow}>
-              <Text style={styles.metaText}>{subject.noteCount} Chapters</Text>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
               <AccessBadge
-                accessType={subject.accessType}
-                isLocked={subject.isLocked}
-                price={subject.price}
+                accessType={item.accessType}
+                isLocked={item.accessType === 'paid' && !item.isPurchased}
+                price={item.price}
               />
             </View>
+            {!!item.shortDescription && (
+              <Text style={styles.cardDesc} numberOfLines={2}>
+                {item.shortDescription}
+              </Text>
+            )}
 
-            {subject.accessType === 'paid' && subject.freePreviewCount > 0 && (
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <Ionicons name="reader-outline" size={14} color={NAVY} />
+                <Text style={styles.metaText}>{item.testCount} Tests</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Ionicons name="help-circle-outline" size={14} color={NAVY} />
+                <Text style={styles.metaText}>{item.totalQuestions} Qs</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Ionicons name="time-outline" size={14} color={NAVY} />
+                <Text style={styles.metaText}>{item.durationMinutes} mins</Text>
+              </View>
+            </View>
+
+            {(item.lockReason === 'upcoming' || item.lockReason === 'expired') && (
+              <View style={styles.dateStatusRow}>
+                <Ionicons
+                  name={item.lockReason === 'upcoming' ? 'time-outline' : 'close-circle-outline'}
+                  size={13}
+                  color={item.lockReason === 'upcoming' ? '#B4790C' : MUTED}
+                />
+                <Text
+                  style={[
+                    styles.dateStatusText,
+                    item.lockReason === 'expired' && styles.dateStatusTextExpired,
+                  ]}
+                >
+                  {item.lockReason === 'upcoming'
+                    ? `Opens on ${formatDate(item.startDate)}`
+                    : 'Availability window has ended'}
+                </Text>
+              </View>
+            )}
+
+            {item.accessType === 'paid' && item.freeSampleCount > 0 && (
               <View style={styles.freeSampleRow}>
                 <Ionicons name="gift-outline" size={13} color="#2E9E5B" />
                 <Text style={styles.freeSampleText}>
-                  {subject.freePreviewCount} {subject.freePreviewCount === 1 ? 'Chapter' : 'Chapters'}{' '}
-                  Free to Try
+                  {item.freeSampleCount} {item.freeSampleCount === 1 ? 'Test' : 'Tests'} Free to Try
                 </Text>
               </View>
             )}
           </Pressable>
         ))}
 
-        {subjects && filteredSubjects.length === 0 && (
+        {series && filteredSeries.length === 0 && (
           <Text style={styles.emptyText}>
             {filter === 'all'
-              ? 'No subjects added yet for this category.'
-              : `No ${filter} subjects found in this category.`}
+              ? 'No test series added yet for this category.'
+              : `No ${filter} series found in this category.`}
           </Text>
         )}
       </ScrollView>
@@ -203,7 +248,7 @@ const styles = StyleSheet.create({
   filterChipTextActive: {
     color: '#FFFFFF',
   },
-  scrollContent: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 24, gap: 12 },
+  scrollContent: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 24, gap: 14 },
   loadingBox: { paddingVertical: 40, alignItems: 'center' },
   errorBox: {
     marginTop: 20,
@@ -220,16 +265,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: '#EDEBE4',
+    overflow: 'hidden',
   },
-  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontSize: 15, fontWeight: '800', color: NAVY, flexShrink: 1 },
-  cardDesc: { fontSize: 12, color: MUTED, marginTop: 6, lineHeight: 17 },
-  metaRow: {
+  banner: {
+    width: '100%',
+    height: 100,
+    borderRadius: 10,
+    marginBottom: 12,
+    backgroundColor: '#EEF1F7',
+  },
+  cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    gap: 8,
   },
+  cardTitle: { flex: 1, fontSize: 15, fontWeight: '800', color: NAVY },
+  cardDesc: { fontSize: 12, color: MUTED, marginTop: 6, lineHeight: 17 },
+  metaRow: { flexDirection: 'row', gap: 16, marginTop: 12 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaText: { fontSize: 12, color: MUTED },
   freeSampleRow: {
     flexDirection: 'row',
@@ -241,5 +295,16 @@ const styles = StyleSheet.create({
     borderTopColor: '#F0EFE9',
   },
   freeSampleText: { fontSize: 12, fontWeight: '700', color: '#2E9E5B' },
+  dateStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0EFE9',
+  },
+  dateStatusText: { fontSize: 12, fontWeight: '700', color: '#B4790C' },
+  dateStatusTextExpired: { color: MUTED },
   emptyText: { textAlign: 'center', color: MUTED, marginTop: 30 },
 });

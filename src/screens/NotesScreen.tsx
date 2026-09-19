@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,13 +9,15 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NotificationBell from '../components/NotificationBell';
 import { resolveAssetUrl } from '../config/api';
 import { Nav } from '../navigation/types';
 import { getNotesSummary, NotesCategorySummary } from '../services/notes.service';
-import { MUTED, NAVY } from '../theme/colors';
+import { GOLD, MUTED, NAVY } from '../theme/colors';
 
 type Props = {
   token: string;
@@ -23,6 +26,7 @@ type Props = {
 
 export default function NotesScreen({ token, nav }: Props) {
   const [categories, setCategories] = useState<NotesCategorySummary[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -47,17 +51,59 @@ export default function NotesScreen({ token, nav }: Props) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    // This list only shows category-level notes cards, not paid content —
+    // allow screenshots here, then restore the app-wide block when left.
+    ScreenCapture.allowScreenCaptureAsync();
+    return () => {
+      ScreenCapture.preventScreenCaptureAsync();
+    };
+  }, []);
+
+  const filteredCategories = categories?.filter((item) =>
+    item.category.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  );
+
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Notes</Text>
-        <Pressable
-          style={styles.bellBtn}
-          hitSlop={8}
-          onPress={() => nav.push({ name: 'notifications' })}
-        >
-          <Ionicons name="notifications-outline" size={22} color={NAVY} />
-        </Pressable>
+      {/* Header Banner */}
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerBadge}>STUDY MATERIAL</Text>
+            <Text style={styles.headerTitle}>Notes</Text>
+          </View>
+          <NotificationBell
+            token={token}
+            iconColor="#FFFFFF"
+            style={styles.headerIconCircle}
+            onPress={() => nav.push({ name: 'notifications' })}
+          />
+        </View>
+        <Text style={styles.headerSubtitle}>
+          Chapter-wise notes for quick revision across every exam category
+        </Text>
+        <View style={styles.goldLine} />
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={17} color={MUTED} />
+          <TextInput
+            placeholder="Search notes by exam category..."
+            placeholderTextColor={MUTED}
+            style={styles.searchInput}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {!!searchQuery && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={17} color={MUTED} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -81,7 +127,7 @@ export default function NotesScreen({ token, nav }: Props) {
           </View>
         )}
 
-        {categories?.map((item) => (
+        {filteredCategories?.map((item) => (
           <Pressable
             style={styles.card}
             key={item.category}
@@ -113,8 +159,8 @@ export default function NotesScreen({ token, nav }: Props) {
           </Pressable>
         ))}
 
-        {categories && categories.length === 0 && (
-          <Text style={styles.emptyText}>No notes have been added yet.</Text>
+        {categories && filteredCategories?.length === 0 && (
+          <Text style={styles.emptyText}>No notes match "{searchQuery}".</Text>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -126,27 +172,76 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F4EF',
   },
+  header: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 14,
+  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 12,
+  },
+  headerBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: GOLD,
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
-    color: NAVY,
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  bellBtn: {
-    width: 36,
-    height: 36,
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#D1D5DB',
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  headerIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  goldLine: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: GOLD,
+  },
+  searchWrap: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EDEBE4',
+  },
+  searchBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F5F4EF',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: NAVY,
+    padding: 0,
   },
   scrollContent: {
     paddingHorizontal: 18,
+    paddingTop: 14,
     paddingBottom: 24,
     gap: 14,
   },

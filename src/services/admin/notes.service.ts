@@ -9,6 +9,7 @@ export interface AdminNote {
   pdfUrl: string | null;
   order: number;
   isActive: boolean;
+  isFreePreview: boolean;
 }
 
 export interface CreateNotePayload {
@@ -18,6 +19,7 @@ export interface CreateNotePayload {
   pdfUrl: string;
   order?: number;
   isActive?: boolean;
+  isFreePreview?: boolean;
 }
 
 export interface UpdateNotePayload {
@@ -26,6 +28,7 @@ export interface UpdateNotePayload {
   pdfUrl?: string;
   order?: number;
   isActive?: boolean;
+  isFreePreview?: boolean;
 }
 
 const authHeaders = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });

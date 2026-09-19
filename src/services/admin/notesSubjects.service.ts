@@ -1,6 +1,8 @@
 import { isAxiosError } from 'axios';
 import api from '../../config/api';
 
+export type NotesAccessType = 'free' | 'paid';
+
 export interface AdminNotesSubject {
   id: string;
   category: string;
@@ -8,7 +10,11 @@ export interface AdminNotesSubject {
   description: string;
   displayOrder: number;
   isActive: boolean;
+  accessType: NotesAccessType;
+  price: number;
   noteCount: number;
+  buyerCount: number;
+  revenue: number;
 }
 
 export interface NotesSubjectPayload {
@@ -16,6 +22,8 @@ export interface NotesSubjectPayload {
   name: string;
   description?: string;
   displayOrder?: number;
+  accessType?: NotesAccessType;
+  price?: number;
 }
 
 export interface UpdateNotesSubjectPayload {
@@ -24,6 +32,8 @@ export interface UpdateNotesSubjectPayload {
   description?: string;
   displayOrder?: number;
   isActive?: boolean;
+  accessType?: NotesAccessType;
+  price?: number;
 }
 
 export interface AdminNotesSubjectNoteItem {

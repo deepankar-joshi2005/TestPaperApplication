@@ -17,7 +17,7 @@
  * so the PDF gets the full screen. The "current / total" page badge here is
  * a small floating pill at the bottom, out of the way of that RN overlay.
  */
-export const buildPdfViewerHtml = (pdfUrl: string): string => `<!DOCTYPE html>
+export const buildPdfViewerHtml = (pdfUrl: string, authToken?: string): string => `<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
@@ -61,7 +61,10 @@ export const buildPdfViewerHtml = (pdfUrl: string): string => `<!DOCTYPE html>
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
-  pdfjsLib.getDocument({ url: ${JSON.stringify(pdfUrl)} }).promise.then(async function (pdf) {
+  pdfjsLib.getDocument({
+    url: ${JSON.stringify(pdfUrl)},
+    httpHeaders: ${authToken ? JSON.stringify({ Authorization: `Bearer ${authToken}` }) : "{}"}
+  }).promise.then(async function (pdf) {
     status.style.display = 'none';
     var counter = document.getElementById('counter');
     counter.style.display = 'block';

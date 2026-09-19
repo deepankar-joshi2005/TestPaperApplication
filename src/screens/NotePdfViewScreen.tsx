@@ -11,12 +11,13 @@ import { ERROR, MUTED, NAVY } from '../theme/colors';
 import { buildPdfViewerHtml } from '../utils/pdfViewer';
 
 type Props = {
+  token: string;
   title: string;
   pdfUrl: string;
   nav: Nav;
 };
 
-export default function NotePdfViewScreen({ title, pdfUrl, nav }: Props) {
+export default function NotePdfViewScreen({ token, title, pdfUrl, nav }: Props) {
   // Blocks screenshots & screen recording while this screen is open.
   usePreventScreenCapture();
   const resolvedUrl = resolveAssetUrl(pdfUrl);
@@ -45,7 +46,7 @@ export default function NotePdfViewScreen({ title, pdfUrl, nav }: Props) {
             mixedContentMode="always"
             javaScriptEnabled
             domStorageEnabled
-            source={{ html: buildPdfViewerHtml(resolvedUrl) }}
+            source={{ html: buildPdfViewerHtml(resolvedUrl, token) }}
             onError={(e) =>
               setWebViewError(`Could not open the PDF viewer: ${e.nativeEvent.description}`)
             }

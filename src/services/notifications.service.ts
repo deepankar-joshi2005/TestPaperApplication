@@ -6,6 +6,10 @@ export interface NotificationItem {
   type: 'result' | 'system';
   title: string;
   message: string;
+  testId: string | null;
+  attemptId: string | null;
+  category: string | null;
+  targetScreen: string | null;
   isRead: boolean;
   createdAt: string;
 }

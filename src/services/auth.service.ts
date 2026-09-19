@@ -1,12 +1,15 @@
 import { isAxiosError } from 'axios';
 import api from '../config/api';
 
+export type Language = 'English' | 'Hindi' | 'Tamil' | 'Telugu' | 'Bengali';
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   mobile: string;
   role: 'student' | 'admin';
+  preferredLanguage: Language;
 }
 
 export interface AuthResponse {

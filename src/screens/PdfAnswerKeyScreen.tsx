@@ -82,7 +82,11 @@ export default function PdfAnswerKeyScreen({ token, attemptId, nav }: Props) {
         )}
 
         {!loading && resolvedUrl && answerKeyType === 'image' && (
-          <Image source={{ uri: resolvedUrl }} style={styles.image} resizeMode="contain" />
+          <Image
+            source={{ uri: resolvedUrl, headers: { Authorization: `Bearer ${token}` } }}
+            style={styles.image}
+            resizeMode="contain"
+          />
         )}
 
         {!loading && resolvedUrl && answerKeyType === 'pdf' && (
@@ -92,7 +96,7 @@ export default function PdfAnswerKeyScreen({ token, attemptId, nav }: Props) {
             mixedContentMode="always"
             javaScriptEnabled
             domStorageEnabled
-            source={{ html: buildPdfViewerHtml(resolvedUrl) }}
+            source={{ html: buildPdfViewerHtml(resolvedUrl, token) }}
             onError={(e) =>
               setWebViewError(`Could not open the PDF viewer: ${e.nativeEvent.description}`)
             }

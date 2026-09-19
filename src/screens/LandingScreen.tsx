@@ -1,3 +1,4 @@
+import * as ScreenCapture from 'expo-screen-capture';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import {
@@ -22,6 +23,15 @@ export default function LandingScreen({ onFinish }: Props) {
     const timer = setTimeout(onFinish, REDIRECT_DELAY_MS);
     return () => clearTimeout(timer);
   }, [onFinish]);
+
+  useEffect(() => {
+    // Marketing splash screen — allow screenshots here, then restore the
+    // app-wide block when the screen is left.
+    ScreenCapture.allowScreenCaptureAsync();
+    return () => {
+      ScreenCapture.preventScreenCaptureAsync();
+    };
+  }, []);
 
   return (
     <View

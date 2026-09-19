@@ -1,9 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import * as ScreenCapture from 'expo-screen-capture';
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BottomTabBar from './src/components/BottomTabBar';
+import { LanguageProvider } from './src/context/LanguageContext';
 import { Nav, Route, routeTab } from './src/navigation/types';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import HelpSupportScreen from './src/screens/HelpSupportScreen';
@@ -16,10 +17,12 @@ import NotePdfViewScreen from './src/screens/NotePdfViewScreen';
 import NotesScreen from './src/screens/NotesScreen';
 import NotesSubjectListScreen from './src/screens/NotesSubjectListScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import PaymentCheckoutScreen from './src/screens/PaymentCheckoutScreen';
 import PdfAnswerKeyScreen from './src/screens/PdfAnswerKeyScreen';
 import PdfTestTakingScreen from './src/screens/PdfTestTakingScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ResultsTabScreen from './src/screens/ResultsTabScreen';
+import SeriesListScreen from './src/screens/SeriesListScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import SolutionReviewScreen from './src/screens/SolutionReviewScreen';
@@ -28,6 +31,7 @@ import TestListScreen from './src/screens/TestListScreen';
 import TestResultScreen from './src/screens/TestResultScreen';
 import TestTakingScreen from './src/screens/TestTakingScreen';
 import TestsScreen from './src/screens/TestsScreen';
+import CurrentAffairsScreen from './src/screens/CurrentAffairsScreen';
 import AdminApp from './src/screens/admin/AdminApp';
 import { AuthUser } from './src/services/auth.service';
 
@@ -40,10 +44,15 @@ export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [stack, setStack] = useState<Route[]>([{ name: 'tab', tab: 'home' }]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Blocked everywhere by default (reliably on Android, best-effort on iOS).
-    // TestResultScreen is the sole exception: it temporarily allows capture
-    // while focused, then this default is restored when it unmounts.
+    // A handful of screens (Landing, Login/Sign Up, Home, Test Series/Notes
+    // listings, Test Result) temporarily allow capture while focused, then
+    // this default is restored when they unmount. This must run as a layout
+    // effect — LandingScreen mounts in the very same initial commit as App,
+    // and layout effects always flush before any passive `useEffect` (like
+    // LandingScreen's own allow-capture call), so this "prevent" reliably
+    // applies first instead of racing with it.
     ScreenCapture.preventScreenCaptureAsync();
   }, []);
 
@@ -106,6 +115,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
+      <LanguageProvider initialLanguage={user.preferredLanguage || 'English'}>
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1 }}>
           {current.name === 'tab' && current.tab === 'home' && (
@@ -113,6 +123,9 @@ export default function App() {
           )}
           {current.name === 'tab' && current.tab === 'tests' && (
             <TestsScreen token={token} nav={nav} />
+          )}
+          {current.name === 'tab' && current.tab === 'affairs' && (
+            <CurrentAffairsScreen token={token} nav={nav} />
           )}
           {current.name === 'tab' && current.tab === 'notes' && (
             <NotesScreen token={token} nav={nav} />
@@ -123,8 +136,11 @@ export default function App() {
           {current.name === 'tab' && current.tab === 'profile' && (
             <ProfileScreen token={token} nav={nav} onLogout={onLogout} />
           )}
+          {current.name === 'seriesList' && (
+            <SeriesListScreen token={token} category={current.category} nav={nav} />
+          )}
           {current.name === 'testList' && (
-            <TestListScreen token={token} category={current.category} nav={nav} />
+            <TestListScreen token={token} seriesId={current.seriesId} nav={nav} />
           )}
           {current.name === 'testInstructions' && (
             <TestInstructionsScreen token={token} testId={current.testId} nav={nav} />
@@ -159,7 +175,20 @@ export default function App() {
             />
           )}
           {current.name === 'notePdfView' && (
-            <NotePdfViewScreen title={current.title} pdfUrl={current.pdfUrl} nav={nav} />
+            <NotePdfViewScreen token={token} title={current.title} pdfUrl={current.pdfUrl} nav={nav} />
+          )}
+          {current.name === 'affairPdfView' && (
+            <NotePdfViewScreen token={token} title={current.title} pdfUrl={current.pdfUrl} nav={nav} />
+          )}
+          {current.name === 'paymentCheckout' && (
+            <PaymentCheckoutScreen
+              token={token}
+              itemType={current.itemType}
+              itemId={current.itemId}
+              itemTitle={current.itemTitle}
+              price={current.price}
+              nav={nav}
+            />
           )}
           {current.name === 'editProfile' && <EditProfileScreen token={token} nav={nav} />}
           {current.name === 'notifications' && <NotificationsScreen token={token} nav={nav} />}
@@ -169,6 +198,7 @@ export default function App() {
 
         {activeTab && <BottomTabBar active={activeTab} onChange={(tab) => nav.resetToTab(tab)} />}
       </View>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

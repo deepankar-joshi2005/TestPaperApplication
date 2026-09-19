@@ -20,6 +20,13 @@ export interface AdminStudentAttempt {
   submittedAt: string | null;
 }
 
+export interface AdminStudentPurchase {
+  itemType: 'series' | 'notesSubject';
+  itemTitle: string;
+  amount: number;
+  purchasedAt: string;
+}
+
 export interface AdminStudentDetail {
   id: string;
   name: string;
@@ -27,6 +34,7 @@ export interface AdminStudentDetail {
   mobile: string;
   joinedAt: string;
   attempts: AdminStudentAttempt[];
+  purchases: AdminStudentPurchase[];
 }
 
 const authHeaders = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });

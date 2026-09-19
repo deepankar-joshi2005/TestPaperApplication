@@ -22,7 +22,7 @@ export default function FormInput({ icon, error, isPassword, ...rest }: Props) {
           !!error && styles.containerError,
         ]}
       >
-        <Ionicons name={icon} size={18} color={focused ? GOLD : MUTED} style={styles.icon} />
+        <Ionicons name={icon} size={18} color={focused ? GOLD : '#8896A7'} style={styles.icon} />
         <TextInput
           {...rest}
           secureTextEntry={hidden}
@@ -59,15 +59,16 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: '#F4F6FA',
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E7E5DE',
+    borderColor: '#DDE3EE',
     paddingHorizontal: 14,
     height: 50,
   },
   containerFocused: {
     borderColor: GOLD,
+    backgroundColor: '#FDFBF6',
   },
   containerError: {
     borderColor: ERROR,

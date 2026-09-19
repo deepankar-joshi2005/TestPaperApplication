@@ -1,15 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AdminNav } from '../../navigation/adminTypes';
 import { AuthUser } from '../../services/auth.service';
 import { ERROR, MUTED, NAVY } from '../../theme/colors';
 
 type Props = {
   user: AuthUser;
+  nav: AdminNav;
   onLogout: () => void;
 };
 
-export default function AdminMoreScreen({ user, onLogout }: Props) {
+export default function AdminMoreScreen({ user, nav, onLogout }: Props) {
   const confirmLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out of the admin panel?', [
       { text: 'Cancel', style: 'cancel' },
@@ -38,6 +40,13 @@ export default function AdminMoreScreen({ user, onLogout }: Props) {
           <Text style={styles.meta}>{user.email}</Text>
           <Text style={styles.roleBadge}>Administrator</Text>
         </View>
+      </View>
+
+      <View style={styles.menu}>
+        <Pressable style={styles.menuRow} onPress={() => nav.push({ name: 'payments' })}>
+          <Ionicons name="cash-outline" size={20} color={NAVY} />
+          <Text style={styles.menuLabel}>Payments & Revenue</Text>
+        </Pressable>
       </View>
 
       <View style={styles.menu}>

@@ -158,21 +158,38 @@ export default function AdminSeriesListScreen({ token, nav }: Props) {
             <Text style={styles.meta}>
               {item.testCount} Tests • {item.totalQuestions} Questions • {item.studentCount} Students
             </Text>
+            {item.accessType === 'paid' && (
+              <Text style={styles.revenueText}>
+                ₹{item.price} • {item.buyerCount} bought • ₹{item.revenue} earned
+              </Text>
+            )}
             <View style={styles.cardFooter}>
-              <View
-                style={[
-                  styles.statusBadge,
-                  item.status === 'published' ? styles.statusPublished : styles.statusDraft,
-                ]}
-              >
-                <Text
+              <View style={styles.badgeRow}>
+                <View
                   style={[
-                    styles.statusText,
-                    item.status === 'published' ? styles.statusTextPublished : styles.statusTextDraft,
+                    styles.statusBadge,
+                    item.status === 'published' ? styles.statusPublished : styles.statusDraft,
                   ]}
                 >
-                  {item.status === 'published' ? 'Published' : 'Draft'}
-                </Text>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      item.status === 'published' ? styles.statusTextPublished : styles.statusTextDraft,
+                    ]}
+                  >
+                    {item.status === 'published' ? 'Published' : 'Draft'}
+                  </Text>
+                </View>
+                <View style={[styles.statusBadge, item.accessType === 'paid' ? styles.statusDraft : styles.statusPublished]}>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      item.accessType === 'paid' ? styles.statusTextDraft : styles.statusTextPublished,
+                    ]}
+                  >
+                    {item.accessType === 'paid' ? 'Paid' : 'Free'}
+                  </Text>
+                </View>
               </View>
               <View style={styles.linkRow}>
                 <Pressable onPress={() => nav.push({ name: 'seriesTests', seriesId: item.id })}>
@@ -247,6 +264,8 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 15, fontWeight: '800', color: NAVY },
   meta: { fontSize: 11.5, color: MUTED, marginTop: 6 },
+  revenueText: { fontSize: 11.5, color: '#2E9E5B', fontWeight: '700', marginTop: 4 },
+  badgeRow: { flexDirection: 'row', gap: 8 },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
