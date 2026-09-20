@@ -13,10 +13,13 @@ const SERVER_ORIGIN_VALUE = "https://testpaperbackend.onrender.com";
 export const SERVER_ORIGIN = SERVER_ORIGIN_VALUE;
 export const API_BASE_URL = `${SERVER_ORIGIN}/api`;
 
-// Uploaded images are served from the server origin (e.g. /uploads/foo.png),
-// not under /api. Backend responses only ever return that relative path.
-export const resolveAssetUrl = (path: string | null | undefined): string | undefined =>
-  path ? `${SERVER_ORIGIN}${path}` : undefined;
+// Most backend responses return a relative path (e.g. /api/files/note/xxx)
+// that needs the server origin prefixed. Some fields (e.g. current affairs
+// PDFs) now store a full Cloudinary URL directly — pass those through as-is.
+export const resolveAssetUrl = (path: string | null | undefined): string | undefined => {
+  if (!path) return undefined;
+  return /^https?:\/\//i.test(path) ? path : `${SERVER_ORIGIN}${path}`;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
