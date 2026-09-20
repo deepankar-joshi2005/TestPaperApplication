@@ -16,7 +16,10 @@
         "foregroundImage": "./assets/Download icon.png"
       },
       "package": "com.dehraduncoaching.app",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,13 +36,17 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#16315C",
-          "image": "./assets/logo.png",
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/Download icon.png",
           "imageWidth": 220,
           "resizeMode": "contain"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a38c020b-1437-49ec-b4ef-c41b1346e43c"
+      }
+    }
   }
 }
-
